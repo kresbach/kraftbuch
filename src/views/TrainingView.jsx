@@ -60,6 +60,7 @@ function StartScreen({ goTo }) {
             const isNext = plan.id === nextPlanId;
             return (
               <li key={plan.id} {...sortable.itemProps(index)} className={`card plan-card ${sortable.itemProps(index).className}`}>
+                <DragHandle className="drag-handle card-corner" label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
                 <div className="plan-card-text">
                   <h3>{planName(plan.id, plan.name)} {isNext && <span className="pill">{t('training.next')}</span>}</h3>
                   <p className="muted small">
@@ -69,7 +70,6 @@ function StartScreen({ goTo }) {
                 <button className="btn btn-primary" onClick={() => dispatch({ type: 'workout/start', planId: plan.id })}>
                   <Icon name="play" size={18} /> {t('common.start')}
                 </button>
-                <DragHandle label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
               </li>
             );
           })}

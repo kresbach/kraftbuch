@@ -7,6 +7,7 @@ import { Icon } from './Icon.jsx';
 export { moveItem } from '../utils/moveItem.js';
 
 const EDGE = 90; // Abstand zum Rand, ab dem beim Ziehen gescrollt wird (px)
+const MIN_MOVE = 12; // so weit muss der Finger in eine Richtung gezogen haben, bevor gescrollt wird
 
 export function useSortable(onMove) {
   const items = useRef([]);
@@ -42,7 +43,12 @@ export function useSortable(onMove) {
     if (!d) return;
     const y = d.lastClientY;
     const bottom = window.innerHeight - EDGE - 70; // Tab-Leiste berücksichtigen
-    const v = y < EDGE ? -Math.ceil((EDGE - y) / 8) : y > bottom ? Math.ceil((y - bottom) / 8) : 0;
+    // Nur in Zugrichtung scrollen: wer einen Griff nahe am Rand nur antippt oder in die
+    // Gegenrichtung zieht, soll die Seite nicht ungewollt verschieben.
+    const movedUp = y < d.startClientY - MIN_MOVE;
+    const movedDown = y > d.startClientY + MIN_MOVE;
+    const v = movedUp && y < EDGE ? -Math.ceil((EDGE - y) / 8)
+      : movedDown && y > bottom ? Math.ceil((y - bottom) / 8) : 0;
     if (v) {
       window.scrollBy(0, v);
       update();
@@ -72,7 +78,7 @@ export function useSortable(onMove) {
           return { top: b.top + window.scrollY, height: b.height };
         });
         const gap = rects.length > 1 ? Math.max(0, rects[1].top - rects[0].top - rects[0].height) : 0;
-        drag.current = { from: i, to: i, startPageY: e.clientY + window.scrollY, lastClientY: e.clientY, rects, gap };
+        drag.current = { from: i, to: i, startPageY: e.clientY + window.scrollY, startClientY: e.clientY, lastClientY: e.clientY, rects, gap };
         document.body.classList.add('is-sorting');
         setView({ from: i, to: i, dy: 0, shift: 0 });
         drag.current.raf = requestAnimationFrame(autoScroll);
