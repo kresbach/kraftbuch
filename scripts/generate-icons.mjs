@@ -2,7 +2,7 @@
 import { writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 
-const BG = [90, 107, 43];
+const BG = [100, 126, 75];
 const FG = [255, 255, 255];
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {

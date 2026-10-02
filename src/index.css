@@ -1,15 +1,16 @@
 /* Layout: eine Spalte (max. 640 px), feste Tab-Leiste unten wie bei nativen Apps. */
 :root {
-  /* Olivgrün als Akzent, Neutraltöne leicht oliv getönt; „erledigt“ bleibt ein klareres Grün */
-  --bg: #f4f5ee;
+  /* helles, gedämpftes Olivgrün als Akzent, Neutraltöne leicht grün getönt; „erledigt“ bleibt ein klareres Grün */
+  --bg: #f3f5f0;
   --surface: #ffffff;
-  --surface-2: #e9ebdd;
-  --line: #dadccb;
-  --fg: #1c1f14;
-  --muted: #5e634f;
-  --accent: #5a6b2b;
+  --surface-2: #e8ece2;
+  --line: #d8ddd0;
+  --fg: #1b2018;
+  --muted: #5b6355;
+  --accent: #647e4b;
   --accent-fg: #ffffff;
-  --accent-soft: #e6ead2;
+  --accent-text: #4e6a3c; /* Akzent als Schriftfarbe auf hellem Grund */
+  --accent-soft: #e6eddd;
   --good: #2c7a4f;
   --good-fg: #ffffff;
   --good-soft: #dcefe2;
@@ -24,15 +25,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #11130c;
-    --surface: #1a1d13;
-    --surface-2: #24281b;
-    --line: #2f3424;
-    --fg: #eceee2;
-    --muted: #a2a791;
-    --accent: #b3c26a;
-    --accent-fg: #1a1f0b;
-    --accent-soft: #2a3119;
+    --bg: #111410;
+    --surface: #191d17;
+    --surface-2: #232920;
+    --line: #2e3529;
+    --fg: #ebefe6;
+    --muted: #a0a897;
+    --accent: #a4c286;
+    --accent-fg: #142010;
+    --accent-text: #a4c286;
+    --accent-soft: #26301f;
     --good: #6ccf98;
     --good-fg: #0d2617;
     --good-soft: #173222;
@@ -89,7 +91,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 
 .page-head { display: flex; flex-direction: column; gap: 4px; padding-block: 4px 4px; }
 .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.back { align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; color: var(--accent); padding: 4px 0; font-weight: 600; }
+.back { align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; color: var(--accent-text); padding: 4px 0; font-weight: 600; }
 
 .section { display: flex; flex-direction: column; gap: 12px; }
 .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
@@ -114,7 +116,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   border: 0; background: none; color: var(--muted);
   font-size: 12px; font-weight: 600;
 }
-.tab.is-active { color: var(--accent); }
+.tab.is-active { color: var(--accent-text); }
 .tab-icon { position: relative; display: inline-flex; }
 .tab-dot { position: absolute; top: -2px; right: -6px; width: 9px; height: 9px; border-radius: 50%; background: var(--good); border: 2px solid var(--surface); }
 
@@ -134,7 +136,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .btn-block { width: 100%; }
 .danger { color: var(--danger); }
 .is-armed { background: var(--danger); border-color: var(--danger); color: #fff; }
-.link { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 600; }
+.link { border: 0; background: none; padding: 0; color: var(--accent-text); font-weight: 600; }
 
 .icon-btn {
   flex: none;
@@ -188,7 +190,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .pill {
   display: inline-block; vertical-align: middle;
   padding: 2px 8px; border-radius: 999px;
-  background: var(--accent-soft); color: var(--accent);
+  background: var(--accent-soft); color: var(--accent-text);
   font-size: 12px; font-weight: 700;
 }
 .pill-muted { background: var(--surface-2); color: var(--muted); }
@@ -281,7 +283,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .editor-line-top strong { flex: 1; min-width: 0; }
 .editor-no {
   flex: none; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 800;
+  border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); font-size: 13px; font-weight: 800;
 }
 .editor-tools { display: flex; }
 .steppers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-left: 34px; }
