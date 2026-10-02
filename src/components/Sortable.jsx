@@ -122,7 +122,7 @@ export function useSortable(onMove) {
 export function DragHandle({ label, className = 'drag-handle', ...props }) {
   return (
     <button type="button" className={className} aria-label={label} title={label} {...props}>
-      <Icon name="grip" size={22} strokeWidth={3.5} />
+      <Icon name="grip" size={18} strokeWidth={3} />
     </button>
   );
 }

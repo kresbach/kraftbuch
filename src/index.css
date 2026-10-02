@@ -210,7 +210,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .card-foot { display: flex; justify-content: flex-end; padding: 0 16px 14px; }
 
 .plan-card { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
-.plan-card .card-corner + .plan-card-text { padding-right: 52px; } /* Platz für den Griff oben rechts */
+.plan-card .card-corner + .plan-card-text { padding-right: 28px; } /* Platz für den Griff oben rechts */
 .plan-card > .btn { align-self: flex-end; }
 .plan-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .plan-lines { width: 100%; display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
@@ -303,15 +303,18 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 /* ---------- Umsortieren per Drag & Drop ---------- */
 .drag-handle {
   flex: none; display: inline-flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; margin-left: 4px;
-  border: 1px solid var(--line); border-radius: var(--radius-sm);
-  background: var(--surface-2); color: var(--fg);
+  width: 28px; height: 32px; margin-left: 2px; padding: 0;
+  border: 0; border-radius: 8px;
+  background: transparent; color: var(--muted); opacity: 0.75;
   cursor: grab; touch-action: none; /* Ziehen statt Scrollen auf Touch-Geräten */
 }
-.drag-handle:hover { border-color: var(--accent); color: var(--accent-text); }
+/* Unsichtbar größere Tippfläche (ca. 44 px), damit der kleine Griff gut zu treffen bleibt */
+.drag-handle:not(.card-corner) { position: relative; }
+.drag-handle::after { content: ''; position: absolute; inset: -6px -8px; }
+.drag-handle:hover, .drag-handle:focus-visible { opacity: 1; color: var(--fg); background: var(--surface-2); }
 .card { position: relative; }
-.card-corner { position: absolute; top: 10px; right: 10px; margin: 0; z-index: 1; }
-.card-corner + .card-button { padding-right: 60px; }
+.card-corner { position: absolute; top: 12px; right: 8px; margin: 0; z-index: 1; }
+.card-corner + .card-button { padding-right: 44px; }
 .version { padding-top: 8px; }
 .is-sorting, .is-sorting * { user-select: none; -webkit-user-select: none; cursor: grabbing !important; }
 .is-shifting { transition: transform 0.18s ease; }
