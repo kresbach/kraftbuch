@@ -33,14 +33,12 @@ function StartScreen({ goTo }) {
     : null;
 
   return (
-    <>
+    <div className="narrow-page">
       <header className="page-head">
         <p className="eyebrow">{fmtLongToday()}</p>
         <h1>{t('training.title')}</h1>
       </header>
 
-      <div className="split">
-      <aside className="split-side">
       <CloudBanner />
 
       <section className="stats" aria-label={t('training.thisWeek')}>
@@ -48,9 +46,8 @@ function StartScreen({ goTo }) {
         <div className="stat"><span className="stat-value num">{sets}</span><span className="stat-label">{t('training.statSets')}</span></div>
         <div className="stat"><span className="stat-value num">{fmtNum(Math.round(volume))}</span><span className="stat-label">{t('training.statVolume')}</span></div>
       </section>
-      </aside>
 
-      <section className="section split-main">
+      <section className="section">
         <div className="section-head">
           <h2>{t('training.startPlan')}</h2>
           <button className="link" onClick={() => goTo('plans')}>{t('training.managePlans')}</button>
@@ -81,8 +78,7 @@ function StartScreen({ goTo }) {
           <Icon name="plus" size={18} /> {t('training.freeStart')}
         </button>
       </section>
-      </div>
-    </>
+    </div>
   );
 }
 

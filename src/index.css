@@ -407,6 +407,9 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   .segmented button:not(.is-on):hover { color: var(--fg); }
 }
 
+/* Schmale, zentrierte Spalte (z. B. Trainings-Startbildschirm), auch in breiten Ansichten */
+.narrow-page { width: 100%; max-width: 720px; margin-inline: auto; display: flex; flex-direction: column; gap: 16px; }
+
 /* ---------- Layout: Seitenspalte + Hauptbereich ---------- */
 .split { display: flex; flex-direction: column; gap: 16px; }
 .split-side { display: flex; flex-direction: column; gap: 12px; }
