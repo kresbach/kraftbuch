@@ -21,6 +21,7 @@ export default function TrainingView({ goTo }) {
 function StartScreen({ goTo }) {
   const { state, dispatch, exercises } = useStore();
   const { t, exName, planName } = useI18n();
+  const sortable = useSortable((from, to) => dispatch({ type: 'plan/move', from, to }));
   const weekStart = startOfWeek();
   const thisWeek = state.workouts.filter((w) => new Date(w.startedAt) >= weekStart);
   const sets = thisWeek.reduce((n, w) => n + w.exercises.reduce((m, ex) => m + ex.sets.length, 0), 0);
@@ -55,10 +56,10 @@ function StartScreen({ goTo }) {
           <p className="muted">{t('training.noPlans')}</p>
         )}
         <ul className="cards">
-          {state.plans.map((plan) => {
+          {state.plans.map((plan, index) => {
             const isNext = plan.id === nextPlanId;
             return (
-              <li key={plan.id} className="card plan-card">
+              <li key={plan.id} {...sortable.itemProps(index)} className={`card plan-card ${sortable.itemProps(index).className}`}>
                 <div className="plan-card-text">
                   <h3>{planName(plan.id, plan.name)} {isNext && <span className="pill">{t('training.next')}</span>}</h3>
                   <p className="muted small">
@@ -68,6 +69,7 @@ function StartScreen({ goTo }) {
                 <button className="btn btn-primary" onClick={() => dispatch({ type: 'workout/start', planId: plan.id })}>
                   <Icon name="play" size={18} /> {t('common.start')}
                 </button>
+                <DragHandle label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
               </li>
             );
           })}
