@@ -63,6 +63,8 @@ export default function SettingsView() {
       </fieldset>
 
       <CloudSettings />
+
+      <p className="muted small center version">{t('settings.version', { version: __APP_VERSION__ })}</p>
     </>
   );
 }

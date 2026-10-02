@@ -148,7 +148,7 @@ function ActiveWorkout() {
                   <ConfirmButton className="icon-btn danger" confirmLabel={t('common.removeQ')} onConfirm={() => dispatch({ type: 'workout/removeExercise', exIndex })}>
                     <Icon name="trash" size={18} />
                   </ConfirmButton>
-                  {w.exercises.length > 1 && <DragHandle label={t('sort.handle')} {...sortable.handleProps(exIndex, w.exercises.length)} />}
+                  <DragHandle label={t('sort.handle')} {...sortable.handleProps(exIndex, w.exercises.length)} />
                 </div>
               </header>
 

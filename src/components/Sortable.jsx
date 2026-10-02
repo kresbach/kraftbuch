@@ -113,10 +113,10 @@ export function useSortable(onMove) {
 }
 
 /** Griff zum Ziehen (⠿). */
-export function DragHandle({ label, ...props }) {
+export function DragHandle({ label, className = 'drag-handle', ...props }) {
   return (
-    <button type="button" className="drag-handle" aria-label={label} title={label} {...props}>
-      <Icon name="grip" size={20} strokeWidth={3} />
+    <button type="button" className={className} aria-label={label} title={label} {...props}>
+      <Icon name="grip" size={22} strokeWidth={3.5} />
     </button>
   );
 }

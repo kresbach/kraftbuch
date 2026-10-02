@@ -130,6 +130,7 @@ export default {
     'settings.languageAutoOption': 'Automatic',
     'settings.languageAuto': 'Follows your device language (currently {lang}).',
     'settings.languageFixed': 'Applies regardless of your device language.',
+    'settings.version': 'Kraftbuch · version {version}',
     'settings.rest': 'Rest time after a set',
     'settings.bar': 'Barbell weight (for the plate display)',
 

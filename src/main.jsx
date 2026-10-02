@@ -8,7 +8,18 @@ import { I18nProvider } from './i18n/index.jsx';
 import './index.css';
 
 // Service Worker: App offline verfügbar machen und Updates automatisch laden.
-registerSW({ immediate: true });
+// Installierte Web-Apps (v. a. iOS) bleiben oft lange im Speicher und prüfen dann nicht von selbst
+// auf Updates – deshalb beim Zurückkehren in die App und stündlich nachsehen. Eine neue Version
+// wird übernommen und die Seite neu geladen (registerType: autoUpdate).
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, registration) {
+    if (!registration) return;
+    const check = () => navigator.onLine !== false && registration.update().catch(() => {});
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check());
+    setInterval(check, 60 * 60 * 1000);
+  },
+});
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

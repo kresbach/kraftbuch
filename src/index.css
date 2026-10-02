@@ -207,8 +207,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
   padding: 14px 16px; border: 0; background: none; text-align: left;
 }
-.card-foot { display: flex; align-items: center; gap: 8px; padding: 0 16px 14px 8px; }
-.card-foot > .btn { margin-left: auto; }
+.card-foot { display: flex; justify-content: flex-end; padding: 0 16px 14px; }
 
 .plan-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
 .plan-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -302,11 +301,16 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 /* ---------- Umsortieren per Drag & Drop ---------- */
 .drag-handle {
   flex: none; display: inline-flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border: 0; border-radius: var(--radius-sm);
-  background: transparent; color: var(--muted);
+  width: 40px; height: 40px; margin-left: 4px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--fg);
   cursor: grab; touch-action: none; /* Ziehen statt Scrollen auf Touch-Geräten */
 }
-.drag-handle:hover { background: var(--surface-2); color: var(--fg); }
+.drag-handle:hover { border-color: var(--accent); color: var(--accent-text); }
+.card { position: relative; }
+.card-corner { position: absolute; top: 10px; right: 10px; margin: 0; z-index: 1; }
+.card-corner + .card-button { padding-right: 60px; }
+.version { padding-top: 8px; }
 .is-sorting, .is-sorting * { user-select: none; -webkit-user-select: none; cursor: grabbing !important; }
 .is-shifting { transition: transform 0.18s ease; }
 .is-dragging {

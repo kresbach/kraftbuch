@@ -130,6 +130,7 @@ export default {
     'settings.languageAutoOption': 'Automatisch',
     'settings.languageAuto': 'Folgt der Sprache deines Geräts (zurzeit {lang}).',
     'settings.languageFixed': 'Gilt unabhängig von der Gerätesprache.',
+    'settings.version': 'Kraftbuch · Version {version}',
     'settings.rest': 'Pausenzeit nach einem Satz',
     'settings.bar': 'Gewicht der Langhantelstange (für die Scheibenanzeige)',
 

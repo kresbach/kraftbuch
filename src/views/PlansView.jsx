@@ -45,6 +45,7 @@ export default function PlansView({ goTo }) {
       <ul className="cards section">
         {state.plans.map((plan, index) => (
           <li key={plan.id} {...sortable.itemProps(index)} className={`card ${sortable.itemProps(index).className}`}>
+            <DragHandle className="drag-handle card-corner" label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
             <button className="card-button" onClick={() => setEditing({ ...structuredClone(plan), name: planName(plan.id, plan.name) })}>
               <h3>{planName(plan.id, plan.name)}</h3>
               <ol className="plan-lines">
@@ -58,7 +59,6 @@ export default function PlansView({ goTo }) {
               <span className="link small">{t('common.edit')}</span>
             </button>
             <div className="card-foot">
-              {state.plans.length > 1 && <DragHandle label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />}
               <button
                 className="btn btn-small"
                 onClick={() => {
@@ -121,7 +121,7 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
                 <strong>{exName(exercises.get(pe.exerciseId))}</strong>
                 <div className="editor-tools">
                   <button type="button" className="icon-btn danger" aria-label={t('planEditor.remove')} onClick={() => remove(i)}><Icon name="trash" size={18} /></button>
-                  {plan.exercises.length > 1 && <DragHandle label={t('sort.handle')} {...sortable.handleProps(i, plan.exercises.length)} />}
+                  <DragHandle label={t('sort.handle')} {...sortable.handleProps(i, plan.exercises.length)} />
                 </div>
               </div>
               <div className="steppers">
