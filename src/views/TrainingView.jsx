@@ -130,7 +130,7 @@ function ActiveWorkout() {
                 </ConfirmButton>
               </header>
 
-              {!isBodyweight && <Plates kg={currentKg} bar={state.settings.barKg} />}
+              {info?.equipment === 'Langhantel' && <Plates kg={currentKg} bar={state.settings.barKg} />}
 
               <div className="set-table" role="table" aria-label={`Sätze ${info?.name ?? ''}`}>
                 <div className="set-row set-row-head" role="row">

@@ -167,7 +167,8 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--fg); font-size: 16px; }
 .toolbar { display: flex; gap: 8px; }
 
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.chips-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-right: 2px; }
 .chip {
   min-height: 34px; padding: 0 12px;
   border: 1px solid var(--line); border-radius: 999px; background: var(--surface);

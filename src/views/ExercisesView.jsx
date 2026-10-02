@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { MUSCLE_GROUPS } from '../data/exercises.js';
+import { EQUIPMENT, MUSCLE_GROUPS } from '../data/exercises.js';
+import { EquipmentFilter, matchesQuery } from '../components/ExercisePicker.jsx';
 import { useStore } from '../state/store.jsx';
 import { Icon } from '../components/Icon.jsx';
 import { Sheet } from '../components/Sheet.jsx';
@@ -10,6 +11,7 @@ export default function ExercisesView() {
   const { state, dispatch, exercises } = useStore();
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
+  const [equipment, setEquipment] = useState(null);
 
   // Bestwerte je Übung aus dem Verlauf
   const bests = useMemo(() => {
@@ -24,7 +26,7 @@ export default function ExercisesView() {
   }, [state.workouts]);
 
   const q = query.trim().toLowerCase();
-  const all = [...exercises.values()].filter((e) => !q || e.name.toLowerCase().includes(q));
+  const all = [...exercises.values()].filter((e) => (!equipment || e.equipment === equipment) && matchesQuery(e, q));
 
   return (
     <>
@@ -40,6 +42,7 @@ export default function ExercisesView() {
         </label>
         <button className="btn btn-primary" onClick={() => setAdding(true)}><Icon name="plus" size={18} /> Eigene</button>
       </div>
+      <EquipmentFilter value={equipment} onChange={setEquipment} />
 
       {MUSCLE_GROUPS.map((group) => {
         const list = all.filter((e) => e.group === group).sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -55,7 +58,7 @@ export default function ExercisesView() {
                     <div className="list-main">
                       <span>{e.name} {e.custom && <span className="pill pill-muted">Eigene</span>}</span>
                       <span className="muted small">
-                        {e.type === 'bodyweight' ? 'Körpergewicht' : 'Mit Gewicht'}
+                        {e.equipment ?? (e.type === 'bodyweight' ? 'Körpergewicht' : 'Mit Gewicht')}
                         {best && (best.e1rm > 0 ? ` · Bestwert ≈ ${fmtNum(Math.round(best.e1rm))} kg (1RM)` : ` · Bestwert ${best.reps} Wdh`)}
                       </span>
                     </div>
@@ -81,7 +84,7 @@ export default function ExercisesView() {
 function AddExercise({ initialName, onSave, onClose }) {
   const [name, setName] = useState(initialName);
   const [group, setGroup] = useState(MUSCLE_GROUPS[0]);
-  const [type, setType] = useState('weight');
+  const [equipment, setEquipment] = useState('Maschine');
   const [error, setError] = useState('');
 
   return (
@@ -91,12 +94,12 @@ function AddExercise({ initialName, onSave, onClose }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!name.trim()) return setError('Bitte gib einen Namen ein.');
-          onSave({ name: name.trim(), group, type });
+          onSave({ name: name.trim(), group, equipment, type: equipment === 'Körpergewicht' ? 'bodyweight' : 'weight' });
         }}
       >
         <label className="field">
           <span className="field-label">Name</span>
-          <input id="new-exercise-name" className="text-input" value={name} autoFocus placeholder="z. B. Front Squat"
+          <input id="new-exercise-name" className="text-input" value={name} autoFocus placeholder="z. B. Beinpresse einbeinig"
             onChange={(e) => { setName(e.target.value); setError(''); }} />
         </label>
         <fieldset className="field">
@@ -108,10 +111,11 @@ function AddExercise({ initialName, onSave, onClose }) {
           </div>
         </fieldset>
         <fieldset className="field">
-          <legend className="field-label">Art</legend>
-          <div className="segmented">
-            <button type="button" className={type === 'weight' ? 'is-on' : ''} onClick={() => setType('weight')}>Mit Gewicht</button>
-            <button type="button" className={type === 'bodyweight' ? 'is-on' : ''} onClick={() => setType('bodyweight')}>Körpergewicht</button>
+          <legend className="field-label">Gerät</legend>
+          <div className="chips">
+            {EQUIPMENT.map((g) => (
+              <button type="button" key={g} className={`chip ${equipment === g ? 'is-on' : ''}`} onClick={() => setEquipment(g)}>{g}</button>
+            ))}
           </div>
         </fieldset>
         {error && <p className="error" role="alert">{error}</p>}
