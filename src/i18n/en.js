@@ -1,4 +1,5 @@
-// English texts, plus English names for default exercises, muscle groups, equipment and sample plans.
+// English texts, plus English names for muscle groups, equipment and sample plans.
+import { DEFAULT_EXERCISES } from '../data/exercises.js';
 
 export default {
   locale: 'en-GB',
@@ -192,6 +193,7 @@ export default {
     Kabelzug: 'Cable',
     Langhantel: 'Barbell',
     Kurzhantel: 'Dumbbell',
+    Kettlebell: 'Kettlebell',
     Körpergewicht: 'Bodyweight',
   },
 
@@ -200,77 +202,6 @@ export default {
     'plan-ganzkoerper-b': 'Full Body B',
   },
 
-  exercises: {
-    // Legs
-    kniebeuge: 'Squat',
-    frontkniebeuge: 'Front Squat',
-    'rum-kreuzheben': 'Romanian Deadlift',
-    'hip-thrust': 'Hip Thrust',
-    ausfallschritte: 'Lunges',
-    'bulgarische-kniebeuge': 'Bulgarian Split Squat',
-    beinpresse: 'Leg Press',
-    'm-beinstrecker': 'Leg Extension (Machine)',
-    'm-beincurl-liegend': 'Lying Leg Curl (Machine)',
-    'm-beincurl-sitzend': 'Seated Leg Curl (Machine)',
-    'm-hackenschmidt': 'Hack Squat (Machine)',
-    'm-smith-kniebeuge': 'Smith Machine Squat',
-    'm-abduktoren': 'Hip Abduction (Machine)',
-    'm-adduktoren': 'Hip Adduction (Machine)',
-    'm-glute-kickback': 'Glute Kickback (Machine)',
-    wadenheben: 'Standing Calf Raise (Machine)',
-    'm-wadenheben-sitzend': 'Seated Calf Raise (Machine)',
-    // Chest
-    bankdruecken: 'Bench Press',
-    'kh-bankdruecken': 'Dumbbell Bench Press',
-    schraegbank: 'Incline Dumbbell Press',
-    'kh-fliegende': 'Dumbbell Fly',
-    'm-brustpresse': 'Chest Press (Machine)',
-    'm-brustpresse-schraeg': 'Incline Chest Press (Machine)',
-    'm-butterfly': 'Pec Deck (Machine)',
-    'm-smith-bankdruecken': 'Smith Machine Bench Press',
-    'kabel-crossover': 'Cable Crossover',
-    dips: 'Dips',
-    liegestuetze: 'Push-ups',
-    // Back
-    kreuzheben: 'Deadlift',
-    'lh-rudern': 'Barbell Row',
-    'kh-rudern': 'One-Arm Dumbbell Row',
-    latzug: 'Lat Pulldown',
-    'm-latzug-eng': 'Close-Grip Lat Pulldown (Machine)',
-    'm-rudern-sitzend': 'Seated Row (Machine)',
-    'm-tbar-rudern': 'T-Bar Row (Machine)',
-    'm-pullover': 'Pullover (Machine)',
-    'm-rueckenstrecker': 'Back Extension (Machine)',
-    kabelrudern: 'Seated Cable Row',
-    klimmzuege: 'Pull-ups',
-    'kh-shrugs': 'Dumbbell Shrugs',
-    // Shoulders
-    schulterdruecken: 'Overhead Press (Barbell)',
-    'kh-schulterdruecken': 'Dumbbell Shoulder Press',
-    'arnold-press': 'Arnold Press',
-    seitheben: 'Lateral Raise',
-    'm-schulterpresse': 'Shoulder Press (Machine)',
-    'm-seitheben': 'Lateral Raise (Machine)',
-    'm-reverse-butterfly': 'Reverse Pec Deck (Machine)',
-    'kabel-seitheben': 'Cable Lateral Raise',
-    'face-pulls': 'Face Pulls',
-    // Arms
-    bizepscurls: 'Biceps Curl',
-    'lh-curls': 'Barbell Curl',
-    hammercurls: 'Hammer Curl',
-    'm-bizepscurls': 'Biceps Curl (Machine)',
-    'kabel-curls': 'Cable Curl',
-    'french-press': 'Skull Crusher (EZ Bar)',
-    trizepsdruecken: 'Triceps Pushdown',
-    'kabel-trizeps-ueberkopf': 'Overhead Cable Triceps Extension',
-    'm-trizeps': 'Triceps Extension (Machine)',
-    'm-dips-sitzend': 'Seated Dip (Machine)',
-    // Core
-    plank: 'Plank (seconds)',
-    beinheben: 'Hanging Leg Raise',
-    crunches: 'Crunches',
-    'm-bauchmaschine': 'Ab Crunch (Machine)',
-    'm-rotation': 'Torso Rotation (Machine)',
-    'kabel-crunch': 'Kneeling Cable Crunch',
-  },
+  // Englische Übungsnamen stehen direkt bei den Übungen (data/exercises.js).
+  exercises: Object.fromEntries(DEFAULT_EXERCISES.map((e) => [e.id, e.en])),
 };

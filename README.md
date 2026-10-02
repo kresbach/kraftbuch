@@ -10,7 +10,7 @@ Läuft im Browser auf iOS und Android, lässt sich auf den Homescreen legen und 
   Zeigt die Werte vom letzten Mal, einen Pausen-Timer und die Hantelscheiben pro Seite.
 - **Pläne** – eigene Trainingspläne anlegen: Übungen auswählen, Sätze × Wiederholungen festlegen, Reihenfolge ändern.
   Zwei Beispielpläne (Ganzkörper A/B) sind vorinstalliert.
-- **Übungen** – 65 Standardübungen (davon 29 an Maschinen) nach Muskelgruppe und Gerät filterbar, dazu eigene Übungen.
+- **Übungen** – 144 Standardübungen in vielen Varianten (Langhantel, Kurzhantel, Maschine, Kabelzug, Kettlebell, Körpergewicht) nach Muskelgruppe und Gerät filterbar, dazu eigene Übungen.
 - **Verlauf** – abgeschlossene Trainings, Fortschrittsdiagramm pro Übung (geschätztes 1RM nach Epley),
   Einstellungen und Speicherort.
 

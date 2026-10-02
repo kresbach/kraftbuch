@@ -50,10 +50,12 @@ export function ExercisePicker({ onPick, onClose, title }) {
   );
 }
 
-/** Suche über Name und Gerät in der gewählten Sprache (z. B. „maschine“ bzw. „machine“). */
-export function matchesQuery(e, q, { exName, equip }) {
+/** Suche über Name, Gerät und Muskelgruppe in der gewählten Sprache. Mehrere Wörter müssen alle
+ *  vorkommen, in beliebiger Reihenfolge – „langhantel bank“ findet „Bankdrücken (Langhantel)“. */
+export function matchesQuery(e, q, { exName, equip, group }) {
   if (!q) return true;
-  return exName(e).toLowerCase().includes(q) || (e.equipment ? equip(e.equipment).toLowerCase().includes(q) : false);
+  const text = [exName(e), e.equipment && equip(e.equipment), group(e.group)].filter(Boolean).join(' ').toLowerCase();
+  return q.split(/\s+/).every((word) => text.includes(word));
 }
 
 /** Filterzeile nach Gerät: Maschine, Kabelzug, Langhantel … */
