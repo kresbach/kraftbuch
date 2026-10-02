@@ -3,7 +3,8 @@ name: Auf GitHub Pages veröffentlichen
 
 on:
   push:
-    branches: [claude/artifact-webpage-creation-yd1w4c]
+    # main ist der Haupt-Branch; der alte Name bleibt nur für die Übergangszeit der Umbenennung
+    branches: [main, claude/artifact-webpage-creation-yd1w4c]
   workflow_dispatch:
 
 permissions:

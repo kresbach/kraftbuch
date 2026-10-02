@@ -52,7 +52,7 @@ npm run icons     # App-Icons in public/ neu erzeugen
 
 ## Veröffentlichung (GitHub Pages)
 
-Bei jedem Push auf den Branch `claude/artifact-webpage-creation-yd1w4c` baut der Workflow
+Bei jedem Push auf den Branch `main` baut der Workflow
 `.github/workflows/deploy-pages.yml` die App und veröffentlicht sie unter
 **https://kresbach.github.io/kraftbuch/**.
 
