@@ -5,24 +5,26 @@ import { ConfirmButton } from '../components/ConfirmButton.jsx';
 import { ProgressChart } from '../components/ProgressChart.jsx';
 import { CloudSettings } from '../components/CloudSettings.jsx';
 import { estimate1RM, fmtDate, fmtDuration, fmtKg, fmtNum, workoutVolume } from '../utils/training.js';
+import { LANGUAGES, deviceLanguage, useI18n } from '../i18n/index.jsx';
 
 const SECTIONS = [
-  { id: 'list', label: 'Trainings' },
-  { id: 'progress', label: 'Fortschritt' },
-  { id: 'settings', label: 'Einstellungen' },
+  { id: 'list', label: 'history.workouts' },
+  { id: 'progress', label: 'history.progress' },
+  { id: 'settings', label: 'history.settings' },
 ];
 
 export default function HistoryView() {
   const [section, setSection] = useState('list');
+  const { t } = useI18n();
   return (
     <>
       <header className="page-head">
-        <h1>Verlauf</h1>
+        <h1>{t('tab.history')}</h1>
       </header>
       <div className="segmented" role="tablist">
         {SECTIONS.map((s) => (
           <button key={s.id} role="tab" aria-selected={section === s.id} className={section === s.id ? 'is-on' : ''} onClick={() => setSection(s.id)}>
-            {s.label}
+            {t(s.label)}
           </button>
         ))}
       </div>
@@ -39,10 +41,11 @@ export default function HistoryView() {
 
 function WorkoutList() {
   const { state, dispatch, exercises } = useStore();
+  const { t, exName, planName } = useI18n();
   const [open, setOpen] = useState(null);
 
   if (state.workouts.length === 0) {
-    return <p className="muted">Noch keine abgeschlossenen Trainings. Starte unter „Training“ dein erstes – es erscheint danach hier.</p>;
+    return <p className="muted">{t('history.empty')}</p>;
   }
 
   return (
@@ -54,21 +57,21 @@ function WorkoutList() {
           <li key={w.id} className="card">
             <button className="card-button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : w.id)}>
               <span className="eyebrow">{fmtDate(w.startedAt)}</span>
-              <h3>{w.name}</h3>
+              <h3>{planName(w.planId, w.name)}</h3>
               <span className="muted small num">
-                {fmtDuration(new Date(w.finishedAt) - new Date(w.startedAt))} · {sets} Sätze · {fmtKg(Math.round(workoutVolume(w)))}
+                {fmtDuration(new Date(w.finishedAt) - new Date(w.startedAt))} · {t('history.sets', { n: sets })} · {fmtKg(Math.round(workoutVolume(w)))}
               </span>
             </button>
             {isOpen && (
               <div className="workout-detail">
                 {w.exercises.map((ex, i) => (
                   <div key={i} className="detail-line">
-                    <strong>{exercises.get(ex.exerciseId)?.name ?? 'Gelöschte Übung'}</strong>
-                    <span className="muted num">{ex.sets.map((s) => (s.kg ? `${fmtNum(s.kg)} × ${s.reps}` : `${s.reps} Wdh`)).join(' · ')}</span>
+                    <strong>{exercises.has(ex.exerciseId) ? exName(exercises.get(ex.exerciseId)) : t('history.deletedExercise')}</strong>
+                    <span className="muted num">{ex.sets.map((s) => (s.kg ? `${fmtNum(s.kg)} × ${s.reps}` : `${s.reps} ${t('workout.reps')}`)).join(' · ')}</span>
                   </div>
                 ))}
-                <ConfirmButton className="btn btn-small btn-ghost danger" confirmLabel="Ja, Training löschen" onConfirm={() => dispatch({ type: 'history/delete', id: w.id })}>
-                  <Icon name="trash" size={16} /> Training löschen
+                <ConfirmButton className="btn btn-small btn-ghost danger" confirmLabel={t('history.deleteConfirm')} onConfirm={() => dispatch({ type: 'history/delete', id: w.id })}>
+                  <Icon name="trash" size={16} /> {t('history.delete')}
                 </ConfirmButton>
               </div>
             )}
@@ -83,6 +86,7 @@ function WorkoutList() {
 
 function Progress() {
   const { state, exercises } = useStore();
+  const { t, exName } = useI18n();
 
   // Übungen, die im Verlauf vorkommen – die häufigste zuerst
   const trained = useMemo(() => {
@@ -95,7 +99,7 @@ function Progress() {
   const exerciseId = trained.includes(selected) ? selected : trained[0];
 
   if (!exerciseId) {
-    return <p className="muted">Sobald du Trainings abgeschlossen hast, siehst du hier, wie sich deine Leistung pro Übung entwickelt.</p>;
+    return <p className="muted">{t('progress.empty')}</p>;
   }
 
   const info = exercises.get(exerciseId);
@@ -119,30 +123,30 @@ function Progress() {
   return (
     <>
       <label className="field">
-        <span className="field-label">Übung</span>
+        <span className="field-label">{t('progress.exercise')}</span>
         <select id="progress-exercise" className="text-input" value={exerciseId} onChange={(e) => setSelected(e.target.value)}>
-          {trained.map((id) => <option key={id} value={id}>{exercises.get(id).name}</option>)}
+          {trained.map((id) => <option key={id} value={id}>{exName(exercises.get(id))}</option>)}
         </select>
       </label>
 
       <section className="stats">
         <div className="stat">
           <span className="stat-value num">{fmtNum(best)}</span>
-          <span className="stat-label">{isBodyweight ? 'Meiste Wdh' : 'Bestes 1RM (geschätzt, kg)'}</span>
+          <span className="stat-label">{t(isBodyweight ? 'progress.mostReps' : 'progress.best1rm')}</span>
         </div>
         <div className="stat">
           <span className="stat-value num">{heaviest.kg ? `${fmtNum(heaviest.kg)}×${heaviest.reps}` : heaviest.reps}</span>
-          <span className="stat-label">{isBodyweight ? 'Bester Satz' : 'Schwerster Satz'}</span>
+          <span className="stat-label">{t(isBodyweight ? 'progress.bestSet' : 'progress.heaviestSet')}</span>
         </div>
         <div className="stat">
           <span className={`stat-value num ${best > first ? 'up' : ''}`}>{best > first ? '+' : ''}{fmtNum(Math.round((best - first) * 10) / 10)}</span>
-          <span className="stat-label">seit dem ersten Training</span>
+          <span className="stat-label">{t('progress.sinceFirst')}</span>
         </div>
       </section>
 
       <div className="card chart-card">
-        <h3 className="small muted">{isBodyweight ? 'Meiste Wiederholungen je Training' : 'Geschätztes 1RM je Training (Epley)'}</h3>
-        <ProgressChart points={points} unit={isBodyweight ? 'Wdh' : 'kg'} />
+        <h3 className="small muted">{t(isBodyweight ? 'progress.chartReps' : 'progress.chart1rm')}</h3>
+        <ProgressChart points={points} unit={isBodyweight ? t('workout.reps') : 'kg'} />
       </div>
     </>
   );
@@ -152,11 +156,26 @@ function Progress() {
 
 function Settings() {
   const { state, dispatch } = useStore();
+  const { t, lang } = useI18n();
 
   return (
     <>
       <fieldset className="field">
-        <legend className="field-label">Pausenzeit nach einem Satz</legend>
+        <legend className="field-label">{t('settings.language')}</legend>
+        <div className="segmented" role="radiogroup" aria-label={t('settings.language')}>
+          {LANGUAGES.map((l) => (
+            <button key={l.id} type="button" role="radio" aria-checked={lang === l.id} lang={l.id}
+              className={lang === l.id ? 'is-on' : ''}
+              onClick={() => dispatch({ type: 'settings/update', patch: { lang: l.id } })}>
+              {l.label}
+            </button>
+          ))}
+        </div>
+        {!state.settings.lang && <p className="muted small">{t('settings.languageAuto', { lang: LANGUAGES.find((l) => l.id === deviceLanguage()).label })}</p>}
+      </fieldset>
+
+      <fieldset className="field">
+        <legend className="field-label">{t('settings.rest')}</legend>
         <div className="segmented">
           {[60, 90, 120, 180].map((s) => (
             <button key={s} type="button" className={state.settings.restSeconds === s ? 'is-on' : ''}
@@ -168,7 +187,7 @@ function Settings() {
       </fieldset>
 
       <fieldset className="field">
-        <legend className="field-label">Gewicht der Langhantelstange (für die Scheibenanzeige)</legend>
+        <legend className="field-label">{t('settings.bar')}</legend>
         <div className="segmented">
           {[20, 15, 10].map((kg) => (
             <button key={kg} type="button" className={state.settings.barKg === kg ? 'is-on' : ''}

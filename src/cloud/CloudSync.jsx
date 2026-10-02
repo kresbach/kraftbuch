@@ -3,11 +3,13 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useStore } from '../state/store.jsx';
 import { isBackup, syncedData } from '../state/reducer.js';
 import { decideSync } from './syncLogic.js';
-import { AuthRequired, GOOGLE_CLIENT_ID, downloadFile, findFile, signIn, uploadFile } from './googleDrive.js';
+import { AuthRequired, DriveError, GOOGLE_CLIENT_ID, downloadFile, findFile, signIn, uploadFile } from './googleDrive.js';
 
 const META_KEY = 'kraftbuch:sync';
 const EMPTY_META = { provider: 'off', lastSyncedAt: 0, remoteVersion: null, fileId: null, token: null, tokenExpiresAt: 0 };
 const BACKUP_REMINDER_MS = 24 * 60 * 60 * 1000;
+const IDLE = { phase: 'idle', msg: '' };
+// Meldungen sind Übersetzungsschlüssel (msg) mit Werten (vars); die Oberfläche übersetzt sie.
 
 function loadMeta() {
   try {
@@ -22,7 +24,7 @@ const CloudContext = createContext(null);
 export function CloudSyncProvider({ children }) {
   const { state, dispatch } = useStore();
   const [meta, setMetaState] = useState(loadMeta);
-  const [status, setStatus] = useState({ phase: 'idle', message: '' });
+  const [status, setStatus] = useState(IDLE);
   const [conflict, setConflict] = useState(null); // {remote, data}
 
   // Refs, damit asynchrone Abläufe immer den aktuellen Stand sehen
@@ -53,11 +55,11 @@ export function CloudSyncProvider({ children }) {
     if (running.current) return;
     const token = validToken();
     if (!token) {
-      setStatus({ phase: 'needs_auth', message: 'Tippe auf „Jetzt synchronisieren“, um dich erneut bei Google anzumelden.' });
+      setStatus({ phase: 'needs_auth', msg: 'cloud.needsAuth' });
       return;
     }
     running.current = true;
-    setStatus({ phase: 'syncing', message: 'Synchronisiere mit Google Drive …' });
+    setStatus({ phase: 'syncing', msg: 'cloud.syncing' });
     try {
       const m = metaRef.current;
       const remote = await findFile(token);
@@ -70,12 +72,12 @@ export function CloudSyncProvider({ children }) {
       if (action === 'conflict') {
         const data = await downloadFile(token, remote.id);
         setConflict({ remote, data });
-        setStatus({ phase: 'conflict', message: 'Auf diesem Gerät und in Google Drive gibt es unterschiedliche Änderungen.' });
+        setStatus({ phase: 'conflict', msg: 'cloud.conflict' });
         return;
       }
       if (action === 'download') {
         const data = await downloadFile(token, remote.id);
-        if (!isBackup(data)) throw new Error('Die Datei in Google Drive ist beschädigt.');
+        if (!isBackup(data)) throw new DriveError('corrupt');
         dispatch({ type: 'data/replace', data });
         setMeta({ lastSyncedAt: data.updatedAt || Date.now(), remoteVersion: remote.modifiedTime, fileId: remote.id });
       } else if (action === 'create' || action === 'upload') {
@@ -84,13 +86,13 @@ export function CloudSyncProvider({ children }) {
         setMeta({ lastSyncedAt: snapshot.updatedAt, remoteVersion: saved.modifiedTime, fileId: saved.id });
       }
       setMeta({ syncedAt: Date.now() });
-      setStatus({ phase: 'idle', message: '' });
+      setStatus(IDLE);
     } catch (e) {
       if (e instanceof AuthRequired) {
         setMeta({ token: null, tokenExpiresAt: 0 });
-        setStatus({ phase: 'needs_auth', message: 'Die Google-Anmeldung ist abgelaufen. Tippe auf „Jetzt synchronisieren“.' });
+        setStatus({ phase: 'needs_auth', msg: 'cloud.authExpired' });
       } else {
-        setStatus({ phase: 'error', message: navigator.onLine === false ? 'Keine Internetverbindung. Der Abgleich folgt, sobald du wieder online bist.' : e.message });
+        setStatus({ phase: 'error', ...errorStatus(e) });
       }
     } finally {
       running.current = false;
@@ -105,7 +107,7 @@ export function CloudSyncProvider({ children }) {
         const { token, expiresAt } = await signIn({ firstTime });
         setMeta({ token, tokenExpiresAt: expiresAt });
       } catch (e) {
-        setStatus({ phase: 'needs_auth', message: e.message });
+        setStatus({ phase: 'needs_auth', ...errorStatus(e) });
         return;
       }
     }
@@ -119,7 +121,7 @@ export function CloudSyncProvider({ children }) {
     if (keep === 'cloud') {
       dispatch({ type: 'data/replace', data: c.data });
       setMeta({ lastSyncedAt: c.data.updatedAt || Date.now(), remoteVersion: c.remote.modifiedTime, fileId: c.remote.id, syncedAt: Date.now() });
-      setStatus({ phase: 'idle', message: '' });
+      setStatus(IDLE);
     } else {
       // Gerätestand gilt: Cloud-Version als bekannt markieren, dann hochladen
       setMeta({ remoteVersion: c.remote.modifiedTime, lastSyncedAt: 0, fileId: c.remote.id });
@@ -154,10 +156,10 @@ export function CloudSyncProvider({ children }) {
   const backupToFile = useCallback(async () => {
     const snapshot = stateRef.current;
     const json = JSON.stringify(syncedData(snapshot), null, 2);
-    const file = new File([json], 'Kraftbuch-Sicherung.json', { type: 'application/json' });
+    const file = new File([json], 'Kraftbuch-Backup.json', { type: 'application/json' });
     try {
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Kraftbuch-Sicherung' });
+        await navigator.share({ files: [file], title: 'Kraftbuch' });
       } else {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(file);
@@ -166,10 +168,10 @@ export function CloudSyncProvider({ children }) {
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       }
       setMeta({ lastSyncedAt: snapshot.updatedAt || Date.now(), lastBackupAt: Date.now() });
-      return { ok: true, message: 'Sicherung gespeichert.' };
+      return { ok: true, msg: 'backup.saved' };
     } catch (e) {
-      if (e?.name === 'AbortError') return { ok: false, message: 'Sicherung abgebrochen.' };
-      return { ok: false, message: 'Die Sicherung konnte nicht gespeichert werden.' };
+      if (e?.name === 'AbortError') return { ok: false, msg: 'backup.cancelled' };
+      return { ok: false, msg: 'backup.failed' };
     }
   }, [setMeta]);
 
@@ -180,15 +182,15 @@ export function CloudSyncProvider({ children }) {
       // Als neue Änderung übernehmen, damit sie bei Google-Sync auch hochgeladen wird
       dispatch({ type: metaRef.current.provider === 'google' ? 'data/import' : 'data/replace', data });
       if (metaRef.current.provider !== 'google') setMeta({ lastSyncedAt: data.updatedAt || Date.now() });
-      return { ok: true, message: `Geladen: ${data.workouts.length} Trainings und ${data.plans.length} Pläne.` };
+      return { ok: true, msg: 'backup.loaded', vars: { workouts: data.workouts.length, plans: data.plans.length } };
     } catch {
-      return { ok: false, message: 'Diese Datei ist keine Kraftbuch-Sicherung. Wähle eine .json-Datei, die du hier gesichert hast.' };
+      return { ok: false, msg: 'backup.invalid' };
     }
   }, [dispatch, setMeta]);
 
   const setProvider = useCallback((provider) => {
     setConflict(null);
-    setStatus({ phase: 'idle', message: '' });
+    setStatus(IDLE);
     setMeta({ ...EMPTY_META, provider });
   }, [setMeta]);
 
@@ -208,6 +210,12 @@ export function CloudSyncProvider({ children }) {
     needsBackup: meta.provider === 'icloud' && dirty && Date.now() - (meta.lastBackupAt || 0) > BACKUP_REMINDER_MS,
   };
   return <CloudContext.Provider value={value}>{children}</CloudContext.Provider>;
+}
+
+function errorStatus(e) {
+  if (navigator.onLine === false) return { msg: 'cloud.offline' };
+  if (e instanceof DriveError) return { msg: `cloud.err.${e.code}`, vars: e.vars };
+  return { msg: 'cloud.err.unknown', vars: { detail: e?.message ?? '' } };
 }
 
 export function useCloudSync() {

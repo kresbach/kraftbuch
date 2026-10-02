@@ -1,9 +1,11 @@
 import { fmtNum, fmtShortDate } from '../utils/training.js';
+import { useI18n } from '../i18n/index.jsx';
 
 // Liniendiagramm: Wert je Trainingstag (z. B. geschätztes 1RM) über die Zeit.
 export function ProgressChart({ points, unit = 'kg' }) {
+  const { t } = useI18n();
   if (points.length < 2) {
-    return <p className="muted chart-empty">Ab zwei Trainings mit dieser Übung erscheint hier dein Verlauf.</p>;
+    return <p className="muted chart-empty">{t('progress.chartEmpty')}</p>;
   }
   const W = 340, H = 180, L = 40, R = 14, T = 14, B = 26;
   const xs = points.map((p) => new Date(p.date).getTime());
@@ -23,7 +25,7 @@ export function ProgressChart({ points, unit = 'kg' }) {
 
   return (
     <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img"
-      aria-label={`Verlauf von ${fmtNum(points[0].value)} bis ${fmtNum(last.value)} ${unit}`}>
+      aria-label={t('progress.chartAria', { from: fmtNum(points[0].value), to: fmtNum(last.value), unit })}>
       {ticks.map((v) => (
         <g key={v}>
           <line className="chart-grid" x1={L} x2={W - R} y1={sy(v)} y2={sy(v)} />

@@ -11,10 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png', 'favicon.svg'],
       manifest: {
-        name: 'Kraftbuch – Trainingstagebuch',
+        name: 'Kraftbuch',
         short_name: 'Kraftbuch',
-        description: 'Kraftsport-Übungen tracken, eigene Trainingspläne erstellen und Fortschritte sehen.',
-        lang: 'de',
+        description: 'Strength training log · Trainingstagebuch für Kraftsport',
         start_url: '.',
         scope: '.',
         display: 'standalone',

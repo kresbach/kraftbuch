@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useI18n } from '../i18n/index.jsx';
 
 // Zweistufiger Button für unwiderrufliche Aktionen: erst tippen, dann bestätigen.
-export function ConfirmButton({ children, confirmLabel = 'Wirklich löschen?', onConfirm, className = 'btn btn-ghost danger' }) {
+export function ConfirmButton({ children, confirmLabel, onConfirm, className = 'btn btn-ghost danger' }) {
+  const { t } = useI18n();
   const [armed, setArmed] = useState(false);
 
   useEffect(() => {
@@ -16,7 +18,7 @@ export function ConfirmButton({ children, confirmLabel = 'Wirklich löschen?', o
       className={`${className} ${armed ? 'is-armed' : ''}`}
       onClick={() => (armed ? onConfirm() : setArmed(true))}
     >
-      {armed ? confirmLabel : children}
+      {armed ? confirmLabel ?? t('common.reallyDelete') : children}
     </button>
   );
 }

@@ -46,14 +46,24 @@ export function platesPerSide(total, bar = 20) {
   return rest > 1e-6 ? null : result;
 }
 
-const nf = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
+// Zahlen- und Datumsformat folgen der gewählten Sprache (setzt der I18nProvider).
+let locale = 'de-DE';
+let nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+export function setFormatLocale(next) {
+  if (next === locale) return;
+  locale = next;
+  nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+}
+
 export const fmtNum = (n) => nf.format(n);
 export const fmtKg = (n) => `${nf.format(n)} kg`;
 
 export const fmtDate = (iso) =>
-  new Date(iso).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+  new Date(iso).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
 export const fmtShortDate = (iso) =>
-  new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  new Date(iso).toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
+export const fmtLongToday = () =>
+  new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
 
 export function fmtDuration(ms) {
   const min = Math.round(ms / 60000);

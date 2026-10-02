@@ -10,6 +10,15 @@ const UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
 /** Wird geworfen, wenn eine (erneute) Anmeldung per Tippen nötig ist. */
 export class AuthRequired extends Error {}
 
+/** Fehler mit Code; die Oberfläche übersetzt ihn (cloud.err.<code>). */
+export class DriveError extends Error {
+  constructor(code, vars = {}) {
+    super(code);
+    this.code = code;
+    this.vars = vars;
+  }
+}
+
 let gisPromise;
 function loadGis() {
   gisPromise ??= new Promise((resolve, reject) => {
@@ -19,7 +28,7 @@ function loadGis() {
     s.onload = () => resolve(window.google);
     s.onerror = () => {
       gisPromise = null;
-      reject(new Error('Google-Anmeldung konnte nicht geladen werden. Prüfe die Internetverbindung.'));
+      reject(new DriveError('gisLoad'));
     };
     document.head.appendChild(s);
   });
@@ -34,10 +43,10 @@ export async function signIn({ firstTime }) {
       client_id: GOOGLE_CLIENT_ID,
       scope: SCOPE,
       callback: (r) => {
-        if (r.error) reject(new Error('Google hat die Anmeldung abgelehnt.'));
+        if (r.error) reject(new DriveError('signInRejected'));
         else resolve({ token: r.access_token, expiresAt: Date.now() + (Number(r.expires_in) - 60) * 1000 });
       },
-      error_callback: () => reject(new Error('Anmeldung abgebrochen.')),
+      error_callback: () => reject(new DriveError('signInCancelled')),
     });
     client.requestAccessToken({ prompt: firstTime ? 'consent' : '' });
   });
@@ -45,8 +54,8 @@ export async function signIn({ firstTime }) {
 
 async function api(token, url, init = {}) {
   const res = await fetch(url, { ...init, headers: { ...init.headers, Authorization: `Bearer ${token}` } });
-  if (res.status === 401) throw new AuthRequired('Anmeldung abgelaufen.');
-  if (!res.ok) throw new Error(`Google Drive antwortet mit Fehler ${res.status}.`);
+  if (res.status === 401) throw new AuthRequired('auth');
+  if (!res.ok) throw new DriveError('http', { status: res.status });
   return res;
 }
 

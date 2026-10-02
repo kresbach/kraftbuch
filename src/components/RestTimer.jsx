@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Icon } from './Icon.jsx';
+import { useI18n } from '../i18n/index.jsx';
 
 // Pausen-Countdown nach einem erledigten Satz.
 export function RestTimer({ endsAt, total, onChange }) {
+  const { t } = useI18n();
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -24,10 +26,10 @@ export function RestTimer({ endsAt, total, onChange }) {
     <div className={`rest ${left === 0 ? 'is-over' : ''}`} role="timer" aria-live="polite">
       <div className="rest-bar" style={{ transform: `scaleX(${progress})` }} />
       <Icon name="timer" size={20} />
-      <span className="rest-label">{left === 0 ? 'Pause vorbei' : 'Pause'}</span>
+      <span className="rest-label">{left === 0 ? t('rest.over') : t('rest.label')}</span>
       <span className="rest-time num">{mm}:{ss}</span>
       <button className="btn btn-small" onClick={() => onChange(endsAt + 15000)}>+15 s</button>
-      <button className="btn btn-small" onClick={() => onChange(null)}>{left === 0 ? 'OK' : 'Überspringen'}</button>
+      <button className="btn btn-small" onClick={() => onChange(null)}>{left === 0 ? t('common.ok') : t('rest.skip')}</button>
     </div>
   );
 }

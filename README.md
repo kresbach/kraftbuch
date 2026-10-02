@@ -1,6 +1,7 @@
 # Kraftbuch
 
 Trainingstagebuch für Kraftsport als **Progressive Web App** (React + Vite).
+Auf Deutsch und Englisch (umschaltbar unter *Verlauf → Einstellungen → Sprache*, sonst nach Gerätesprache).
 Läuft im Browser auf iOS und Android, lässt sich auf den Homescreen legen und funktioniert danach auch offline.
 
 ## Funktionen
@@ -76,6 +77,7 @@ src/
   state/reducer.js      Datenmodell und alle Änderungen am Zustand
   state/store.jsx       React-Context, Speichern in localStorage
   cloud/                Google-Drive-Abgleich und iCloud-Sicherung
+  i18n/                 Übersetzungen (de.js, en.js) und Sprachwahl; Test: node src/i18n/i18n.test.mjs
   utils/training.js     Rechenhelfer (1RM, Volumen, Scheiben, Datum)
   components/           Wiederverwendbare Bausteine (Auswahl-Dialog, Timer, Diagramm …)
   views/                Die vier Hauptansichten

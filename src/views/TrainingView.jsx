@@ -7,7 +7,8 @@ import { ExercisePicker } from '../components/ExercisePicker.jsx';
 import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
 import { CloudBanner } from '../components/CloudSettings.jsx';
-import { fmtDuration, fmtNum, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
+import { fmtDuration, fmtLongToday, fmtNum, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function TrainingView({ goTo }) {
   const { state } = useStore();
@@ -18,6 +19,7 @@ export default function TrainingView({ goTo }) {
 
 function StartScreen({ goTo }) {
   const { state, dispatch, exercises } = useStore();
+  const { t, exName, planName } = useI18n();
   const weekStart = startOfWeek();
   const thisWeek = state.workouts.filter((w) => new Date(w.startedAt) >= weekStart);
   const sets = thisWeek.reduce((n, w) => n + w.exercises.reduce((m, ex) => m + ex.sets.length, 0), 0);
@@ -31,25 +33,25 @@ function StartScreen({ goTo }) {
   return (
     <>
       <header className="page-head">
-        <p className="eyebrow">{new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-        <h1>Training</h1>
+        <p className="eyebrow">{fmtLongToday()}</p>
+        <h1>{t('training.title')}</h1>
       </header>
 
       <CloudBanner />
 
-      <section className="stats" aria-label="Diese Woche">
-        <div className="stat"><span className="stat-value num">{thisWeek.length}</span><span className="stat-label">Trainings diese Woche</span></div>
-        <div className="stat"><span className="stat-value num">{sets}</span><span className="stat-label">Sätze</span></div>
-        <div className="stat"><span className="stat-value num">{fmtNum(Math.round(volume))}</span><span className="stat-label">kg bewegt</span></div>
+      <section className="stats" aria-label={t('training.thisWeek')}>
+        <div className="stat"><span className="stat-value num">{thisWeek.length}</span><span className="stat-label">{t('training.statWorkouts')}</span></div>
+        <div className="stat"><span className="stat-value num">{sets}</span><span className="stat-label">{t('training.statSets')}</span></div>
+        <div className="stat"><span className="stat-value num">{fmtNum(Math.round(volume))}</span><span className="stat-label">{t('training.statVolume')}</span></div>
       </section>
 
       <section className="section">
         <div className="section-head">
-          <h2>Plan starten</h2>
-          <button className="link" onClick={() => goTo('plans')}>Pläne verwalten</button>
+          <h2>{t('training.startPlan')}</h2>
+          <button className="link" onClick={() => goTo('plans')}>{t('training.managePlans')}</button>
         </div>
         {state.plans.length === 0 && (
-          <p className="muted">Noch kein Plan angelegt. Erstelle unter „Pläne“ deinen eigenen oder starte ein freies Training.</p>
+          <p className="muted">{t('training.noPlans')}</p>
         )}
         <ul className="cards">
           {state.plans.map((plan) => {
@@ -57,20 +59,20 @@ function StartScreen({ goTo }) {
             return (
               <li key={plan.id} className="card plan-card">
                 <div className="plan-card-text">
-                  <h3>{plan.name} {isNext && <span className="pill">Als Nächstes</span>}</h3>
+                  <h3>{planName(plan.id, plan.name)} {isNext && <span className="pill">{t('training.next')}</span>}</h3>
                   <p className="muted small">
-                    {plan.exercises.map((pe) => exercises.get(pe.exerciseId)?.name ?? 'Unbekannt').join(' · ') || 'Keine Übungen'}
+                    {plan.exercises.map((pe) => exName(exercises.get(pe.exerciseId))).join(' · ') || t('plans.noExercises')}
                   </p>
                 </div>
                 <button className="btn btn-primary" onClick={() => dispatch({ type: 'workout/start', planId: plan.id })}>
-                  <Icon name="play" size={18} /> Starten
+                  <Icon name="play" size={18} /> {t('common.start')}
                 </button>
               </li>
             );
           })}
         </ul>
         <button className="btn btn-block" onClick={() => dispatch({ type: 'workout/start', planId: null })}>
-          <Icon name="plus" size={18} /> Freies Training ohne Plan
+          <Icon name="plus" size={18} /> {t('training.freeStart')}
         </button>
       </section>
     </>
@@ -81,6 +83,7 @@ function StartScreen({ goTo }) {
 
 function ActiveWorkout() {
   const { state, dispatch, exercises } = useStore();
+  const { t, exName, planName } = useI18n();
   const w = state.activeWorkout;
   const [picking, setPicking] = useState(false);
   const [restEnd, setRestEnd] = useState(null);
@@ -103,8 +106,8 @@ function ActiveWorkout() {
   return (
     <>
       <header className="page-head">
-        <p className="eyebrow">Läuft seit {fmtDuration(Date.now() - new Date(w.startedAt).getTime())} · {doneCount}/{totalCount} Sätze</p>
-        <h1>{w.name}</h1>
+        <p className="eyebrow">{t('workout.running', { duration: fmtDuration(Date.now() - new Date(w.startedAt).getTime()), done: doneCount, total: totalCount })}</p>
+        <h1>{planName(w.planId, w.name)}</h1>
       </header>
 
       <div className="workout">
@@ -120,36 +123,36 @@ function ActiveWorkout() {
             <section key={exIndex} className="card exercise">
               <header className="exercise-head">
                 <div>
-                  <h2>{info?.name ?? 'Unbekannte Übung'}</h2>
+                  <h2>{exName(info)}</h2>
                   <p className="muted small">
-                    {last ? `Letztes Mal: ${last.map((s) => (s.kg ? `${fmtNum(s.kg)}×${s.reps}` : `${s.reps}`)).join(', ')}` : 'Erstes Mal – viel Erfolg!'}
+                    {last ? t('workout.lastTime', { sets: last.map((s) => (s.kg ? `${fmtNum(s.kg)}×${s.reps}` : `${s.reps}`)).join(', ') }) : t('workout.firstTime')}
                   </p>
                 </div>
-                <ConfirmButton className="icon-btn danger" confirmLabel="Entfernen?" onConfirm={() => dispatch({ type: 'workout/removeExercise', exIndex })}>
+                <ConfirmButton className="icon-btn danger" confirmLabel={t('common.removeQ')} onConfirm={() => dispatch({ type: 'workout/removeExercise', exIndex })}>
                   <Icon name="trash" size={18} />
                 </ConfirmButton>
               </header>
 
               {info?.equipment === 'Langhantel' && <Plates kg={currentKg} bar={state.settings.barKg} />}
 
-              <div className="set-table" role="table" aria-label={`Sätze ${info?.name ?? ''}`}>
+              <div className="set-table" role="table" aria-label={t('workout.setsOf', { name: exName(info) })}>
                 <div className="set-row set-row-head" role="row">
-                  <span role="columnheader">Satz</span>
+                  <span role="columnheader">{t('workout.set')}</span>
                   <span role="columnheader">{isBodyweight ? '+kg' : 'kg'}</span>
-                  <span role="columnheader">Wdh</span>
-                  <span role="columnheader" className="sr-only">Erledigt</span>
+                  <span role="columnheader">{t('workout.reps')}</span>
+                  <span role="columnheader" className="sr-only">{t('workout.done')}</span>
                 </div>
                 {ex.sets.map((set, setIndex) => (
                   <div key={setIndex} className={`set-row ${set.done ? 'is-done' : ''}`} role="row">
                     <span className="set-no num" role="cell">{setIndex + 1}</span>
                     <input id={`w-${exIndex}-${setIndex}-kg`} className="num-input" role="cell" inputMode="decimal"
-                      placeholder={isBodyweight ? '0' : '–'} value={set.kg} aria-label={`Satz ${setIndex + 1} Gewicht`}
+                      placeholder={isBodyweight ? '0' : '–'} value={set.kg} aria-label={t('workout.ariaWeight', { n: setIndex + 1 })}
                       onChange={(e) => dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { kg: e.target.value } })} />
                     <input id={`w-${exIndex}-${setIndex}-reps`} className="num-input" role="cell" inputMode="numeric"
-                      placeholder="–" value={set.reps} aria-label={`Satz ${setIndex + 1} Wiederholungen`}
+                      placeholder="–" value={set.reps} aria-label={t('workout.ariaReps', { n: setIndex + 1 })}
                       onChange={(e) => dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { reps: e.target.value } })} />
                     <button role="cell" className={`check ${set.done ? 'is-on' : ''}`} aria-pressed={set.done}
-                      aria-label={`Satz ${setIndex + 1} erledigt`} onClick={() => toggleDone(exIndex, setIndex, set)}>
+                      aria-label={t('workout.ariaDone', { n: setIndex + 1 })} onClick={() => toggleDone(exIndex, setIndex, set)}>
                       <Icon name="check" size={20} />
                     </button>
                   </div>
@@ -158,11 +161,11 @@ function ActiveWorkout() {
 
               <div className="row-actions">
                 <button className="btn btn-small" onClick={() => dispatch({ type: 'workout/addSet', exIndex })}>
-                  <Icon name="plus" size={16} /> Satz
+                  <Icon name="plus" size={16} /> {t('workout.set')}
                 </button>
                 {ex.sets.length > 0 && (
                   <button className="btn btn-small btn-ghost" onClick={() => dispatch({ type: 'workout/removeSet', exIndex, setIndex: ex.sets.length - 1 })}>
-                    Letzten Satz entfernen
+                    {t('workout.removeLastSet')}
                   </button>
                 )}
               </div>
@@ -171,16 +174,16 @@ function ActiveWorkout() {
         })}
 
         <button className="btn btn-block" onClick={() => setPicking(true)}>
-          <Icon name="plus" size={18} /> Übung hinzufügen
+          <Icon name="plus" size={18} /> {t('picker.title')}
         </button>
 
         <div className="finish">
           <button className="btn btn-primary btn-block" onClick={() => dispatch({ type: 'workout/finish' })} disabled={doneCount === 0}>
-            <Icon name="check" size={18} /> Training abschließen
+            <Icon name="check" size={18} /> {t('workout.finish')}
           </button>
-          {doneCount === 0 && <p className="muted small center">Hake mindestens einen Satz ab, um das Training zu speichern.</p>}
-          <ConfirmButton className="btn btn-ghost danger btn-block" confirmLabel="Ja, Training verwerfen" onConfirm={() => dispatch({ type: 'workout/discard' })}>
-            Training verwerfen
+          {doneCount === 0 && <p className="muted small center">{t('workout.finishHint')}</p>}
+          <ConfirmButton className="btn btn-ghost danger btn-block" confirmLabel={t('workout.discardConfirm')} onConfirm={() => dispatch({ type: 'workout/discard' })}>
+            {t('workout.discard')}
           </ConfirmButton>
         </div>
       </div>

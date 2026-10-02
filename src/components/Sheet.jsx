@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { Icon } from './Icon.jsx';
+import { useI18n } from '../i18n/index.jsx';
 
 // Von unten einfahrendes Panel (auf Desktop zentrierter Dialog).
 export function Sheet({ title, onClose, children }) {
+  const { t } = useI18n();
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
@@ -18,7 +20,7 @@ export function Sheet({ title, onClose, children }) {
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <header className="sheet-head">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Schließen">
+          <button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="close" />
           </button>
         </header>
