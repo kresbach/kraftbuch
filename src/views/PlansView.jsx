@@ -3,6 +3,7 @@ import { useStore } from '../state/store.jsx';
 import { Icon } from '../components/Icon.jsx';
 import { ConfirmButton } from '../components/ConfirmButton.jsx';
 import { ExercisePicker } from '../components/ExercisePicker.jsx';
+import { DragHandle, moveItem, useSortable } from '../components/Sortable.jsx';
 import { uid } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 
@@ -84,12 +85,7 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
 
   const setLine = (i, patch) =>
     setPlan((p) => ({ ...p, exercises: p.exercises.map((pe, j) => (j === i ? { ...pe, ...patch } : pe)) }));
-  const move = (i, dir) =>
-    setPlan((p) => {
-      const list = [...p.exercises];
-      [list[i], list[i + dir]] = [list[i + dir], list[i]];
-      return { ...p, exercises: list };
-    });
+  const sortable = useSortable((from, to) => setPlan((p) => ({ ...p, exercises: moveItem(p.exercises, from, to) })));
   const remove = (i) => setPlan((p) => ({ ...p, exercises: p.exercises.filter((_, j) => j !== i) }));
 
   function save(e) {
@@ -117,14 +113,13 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
         {plan.exercises.length === 0 && <p className="muted">{t('planEditor.empty')}</p>}
         <ul className="editor-list">
           {plan.exercises.map((pe, i) => (
-            <li key={i} className="card editor-line">
+            <li key={i} {...sortable.itemProps(i)} className={`card editor-line ${sortable.itemProps(i).className}`}>
               <div className="editor-line-top">
                 <span className="editor-no num">{i + 1}</span>
                 <strong>{exName(exercises.get(pe.exerciseId))}</strong>
                 <div className="editor-tools">
-                  <button type="button" className="icon-btn" aria-label={t('planEditor.up')} disabled={i === 0} onClick={() => move(i, -1)}><Icon name="up" size={18} /></button>
-                  <button type="button" className="icon-btn" aria-label={t('planEditor.down')} disabled={i === plan.exercises.length - 1} onClick={() => move(i, 1)}><Icon name="down" size={18} /></button>
                   <button type="button" className="icon-btn danger" aria-label={t('planEditor.remove')} onClick={() => remove(i)}><Icon name="trash" size={18} /></button>
+                  {plan.exercises.length > 1 && <DragHandle label={t('sort.handle')} {...sortable.handleProps(i, plan.exercises.length)} />}
                 </div>
               </div>
               <div className="steppers">

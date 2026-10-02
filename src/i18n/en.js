@@ -72,8 +72,6 @@ export default {
     'planEditor.name': 'Plan name',
     'planEditor.placeholder': 'e.g. Upper body, Push, Day A',
     'planEditor.empty': 'No exercises yet. Add the first one below.',
-    'planEditor.up': 'Move up',
-    'planEditor.down': 'Move down',
     'planEditor.remove': 'Remove exercise',
     'planEditor.sets': 'Sets',
     'planEditor.save': 'Save plan',
@@ -81,6 +79,7 @@ export default {
     'planEditor.deleteConfirm': 'Yes, delete plan',
     'planEditor.nameMissing': 'Give the plan a name, e.g. “Push day”.',
     'planEditor.noExercises': 'Add at least one exercise.',
+    'sort.handle': 'Drag to reorder (or use arrow keys)',
     'stepper.dec': 'Decrease {label}',
     'stepper.inc': 'Increase {label}',
 

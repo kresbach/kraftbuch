@@ -7,6 +7,7 @@ import { ExercisePicker } from '../components/ExercisePicker.jsx';
 import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
 import { CloudBanner } from '../components/CloudSettings.jsx';
+import { DragHandle, useSortable } from '../components/Sortable.jsx';
 import { fmtClock, fmtLongToday, fmtNum, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 
@@ -87,6 +88,7 @@ function ActiveWorkout() {
   const w = state.activeWorkout;
   const [picking, setPicking] = useState(false);
   const [restEnd, setRestEnd] = useState(null);
+  const sortable = useSortable((from, to) => dispatch({ type: 'workout/moveExercise', from, to }));
   const [, tick] = useState(0);
 
   // Trainingsuhr jede Sekunde aktualisieren.
@@ -133,7 +135,8 @@ function ActiveWorkout() {
           const nextKg = parseNum(ex.sets.find((s) => !s.done)?.kg);
           const currentKg = nextKg || parseNum(filled[filled.length - 1]?.kg);
           return (
-            <section key={exIndex} className="card exercise">
+            <section key={exIndex} {...sortable.itemProps(exIndex)}
+              className={`card exercise ${sortable.itemProps(exIndex).className}`}>
               <header className="exercise-head">
                 <div>
                   <h2>{exName(info)}</h2>
@@ -141,9 +144,12 @@ function ActiveWorkout() {
                     {last ? t('workout.lastTime', { sets: last.map((s) => (s.kg ? `${fmtNum(s.kg)}×${s.reps}` : `${s.reps}`)).join(', ') }) : t('workout.firstTime')}
                   </p>
                 </div>
-                <ConfirmButton className="icon-btn danger" confirmLabel={t('common.removeQ')} onConfirm={() => dispatch({ type: 'workout/removeExercise', exIndex })}>
-                  <Icon name="trash" size={18} />
-                </ConfirmButton>
+                <div className="exercise-tools">
+                  <ConfirmButton className="icon-btn danger" confirmLabel={t('common.removeQ')} onConfirm={() => dispatch({ type: 'workout/removeExercise', exIndex })}>
+                    <Icon name="trash" size={18} />
+                  </ConfirmButton>
+                  {w.exercises.length > 1 && <DragHandle label={t('sort.handle')} {...sortable.handleProps(exIndex, w.exercises.length)} />}
+                </div>
               </header>
 
               {info?.equipment === 'Langhantel' && <Plates kg={currentKg} bar={state.settings.barKg} />}

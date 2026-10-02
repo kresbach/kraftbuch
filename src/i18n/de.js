@@ -72,8 +72,6 @@ export default {
     'planEditor.name': 'Name des Plans',
     'planEditor.placeholder': 'z. B. Oberkörper, Push, Tag A',
     'planEditor.empty': 'Noch keine Übungen. Füge unten die erste hinzu.',
-    'planEditor.up': 'Nach oben',
-    'planEditor.down': 'Nach unten',
     'planEditor.remove': 'Übung entfernen',
     'planEditor.sets': 'Sätze',
     'planEditor.save': 'Plan speichern',
@@ -81,6 +79,7 @@ export default {
     'planEditor.deleteConfirm': 'Ja, Plan löschen',
     'planEditor.nameMissing': 'Gib dem Plan einen Namen, z. B. „Push-Tag“.',
     'planEditor.noExercises': 'Füge mindestens eine Übung hinzu.',
+    'sort.handle': 'Zum Verschieben ziehen (oder Pfeiltasten)',
     'stepper.dec': '{label} verringern',
     'stepper.inc': '{label} erhöhen',
 

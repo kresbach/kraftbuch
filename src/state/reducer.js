@@ -2,6 +2,7 @@
 import { DEFAULT_EXERCISES } from '../data/exercises.js';
 import { DEFAULT_PLANS } from '../data/defaultPlans.js';
 import { parseNum, uid } from '../utils/training.js';
+import { moveItem } from '../utils/moveItem.js';
 
 export const initialState = {
   version: 1,
@@ -112,6 +113,11 @@ export function reducer(state, action) {
           ...state.activeWorkout,
           exercises: state.activeWorkout.exercises.filter((_, i) => i !== action.exIndex),
         },
+      };
+    case 'workout/moveExercise':
+      return {
+        ...state,
+        activeWorkout: { ...state.activeWorkout, exercises: moveItem(state.activeWorkout.exercises, action.from, action.to) },
       };
     case 'workout/addSet':
       return updateWorkoutExercise(state, action.exIndex, (ex) => {
