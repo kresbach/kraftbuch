@@ -207,12 +207,14 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
   padding: 14px 16px; border: 0; background: none; text-align: left;
 }
-.card-foot { display: flex; justify-content: flex-end; padding: 0 16px 14px; }
+.card-foot { display: flex; align-items: center; gap: 8px; padding: 0 16px 14px 8px; }
+.card-foot > .btn { margin-left: auto; }
 
 .plan-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
 .plan-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .plan-lines { width: 100%; display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
 .plan-lines li { display: flex; justify-content: space-between; gap: 12px; }
+.plan-lines li > span:last-child { flex: none; white-space: nowrap; }
 
 .list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 .list-item { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 16px; min-height: 56px; }

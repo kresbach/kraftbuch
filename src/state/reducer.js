@@ -83,6 +83,8 @@ export function reducer(state, action) {
     }
     case 'plan/delete':
       return { ...state, plans: state.plans.filter((p) => p.id !== action.id) };
+    case 'plan/move':
+      return { ...state, plans: moveItem(state.plans, action.from, action.to) };
 
     // ---- Laufendes Training ----
     case 'workout/start': {

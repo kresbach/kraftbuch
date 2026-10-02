@@ -11,6 +11,7 @@ export default function PlansView({ goTo }) {
   const { state, dispatch, exercises } = useStore();
   const { t, exName, planName } = useI18n();
   const [editing, setEditing] = useState(null); // Plan-Entwurf oder null
+  const sortable = useSortable((from, to) => dispatch({ type: 'plan/move', from, to }));
 
   if (editing) {
     return (
@@ -42,8 +43,8 @@ export default function PlansView({ goTo }) {
       </button>
 
       <ul className="cards section">
-        {state.plans.map((plan) => (
-          <li key={plan.id} className="card">
+        {state.plans.map((plan, index) => (
+          <li key={plan.id} {...sortable.itemProps(index)} className={`card ${sortable.itemProps(index).className}`}>
             <button className="card-button" onClick={() => setEditing({ ...structuredClone(plan), name: planName(plan.id, plan.name) })}>
               <h3>{planName(plan.id, plan.name)}</h3>
               <ol className="plan-lines">
@@ -57,6 +58,7 @@ export default function PlansView({ goTo }) {
               <span className="link small">{t('common.edit')}</span>
             </button>
             <div className="card-foot">
+              {state.plans.length > 1 && <DragHandle label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />}
               <button
                 className="btn btn-small"
                 onClick={() => {
