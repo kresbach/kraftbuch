@@ -47,6 +47,7 @@ export default function ExercisesView() {
       </div>
       <EquipmentFilter value={equipment} onChange={setEquipment} />
 
+      <div className="groups">
       {MUSCLE_GROUPS.map((group) => {
         const list = all.filter((e) => e.group === group).sort((a, b) => i18n.compare(exName(a), exName(b)));
         if (list.length === 0) return null;
@@ -79,6 +80,7 @@ export default function ExercisesView() {
           </section>
         );
       })}
+      </div>
       {all.length === 0 && <p className="muted section">{t('exercises.empty')}</p>}
 
       {adding && <AddExercise initialName={query} onClose={() => setAdding(false)} onSave={(exercise) => { dispatch({ type: 'exercise/add', exercise }); setAdding(false); }} />}

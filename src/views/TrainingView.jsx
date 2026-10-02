@@ -39,6 +39,8 @@ function StartScreen({ goTo }) {
         <h1>{t('training.title')}</h1>
       </header>
 
+      <div className="split">
+      <aside className="split-side">
       <CloudBanner />
 
       <section className="stats" aria-label={t('training.thisWeek')}>
@@ -46,8 +48,9 @@ function StartScreen({ goTo }) {
         <div className="stat"><span className="stat-value num">{sets}</span><span className="stat-label">{t('training.statSets')}</span></div>
         <div className="stat"><span className="stat-value num">{fmtNum(Math.round(volume))}</span><span className="stat-label">{t('training.statVolume')}</span></div>
       </section>
+      </aside>
 
-      <section className="section">
+      <section className="section split-main">
         <div className="section-head">
           <h2>{t('training.startPlan')}</h2>
           <button className="link" onClick={() => goTo('plans')}>{t('training.managePlans')}</button>
@@ -59,7 +62,7 @@ function StartScreen({ goTo }) {
           {state.plans.map((plan, index) => {
             const isNext = plan.id === nextPlanId;
             return (
-              <li key={plan.id} {...sortable.itemProps(index)} className={`card plan-card ${sortable.itemProps(index).className}`}>
+              <li key={plan.id} ref={sortable.itemRef(index)} className="card plan-card">
                 <DragHandle className="drag-handle card-corner" label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
                 <div className="plan-card-text">
                   <h3>{planName(plan.id, plan.name)} {isNext && <span className="pill">{t('training.next')}</span>}</h3>
@@ -78,6 +81,7 @@ function StartScreen({ goTo }) {
           <Icon name="plus" size={18} /> {t('training.freeStart')}
         </button>
       </section>
+      </div>
     </>
   );
 }
@@ -91,13 +95,6 @@ function ActiveWorkout() {
   const [picking, setPicking] = useState(false);
   const [restEnd, setRestEnd] = useState(null);
   const sortable = useSortable((from, to) => dispatch({ type: 'workout/moveExercise', from, to }));
-  const [, tick] = useState(0);
-
-  // Trainingsuhr jede Sekunde aktualisieren.
-  useEffect(() => {
-    const timer = setInterval(() => tick((n) => n + 1), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const doneCount = w.exercises.reduce((n, ex) => n + ex.sets.filter((s) => s.done).length, 0);
   const totalCount = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
@@ -113,10 +110,12 @@ function ActiveWorkout() {
         <h1>{planName(w.planId, w.name)}</h1>
       </header>
 
+      <div className="split workout-split">
+      <aside className="split-side">
       <section className="workout-status" aria-label={t('workout.status')}>
         <div className="elapsed">
           <span className="status-label"><Icon name="timer" size={16} /> {t('workout.elapsed')}</span>
-          <span className="elapsed-time num" role="timer">{fmtClock(Date.now() - new Date(w.startedAt).getTime())}</span>
+          <ElapsedClock startedAt={w.startedAt} />
         </div>
         <div className="sets-progress">
           <span className="status-label">{t('workout.setsLabel')}</span>
@@ -127,7 +126,24 @@ function ActiveWorkout() {
         </div>
       </section>
 
-      <div className="workout">
+      <div className="workout-actions">
+        <button className="btn btn-block" onClick={() => setPicking(true)}>
+          <Icon name="plus" size={18} /> {t('picker.title')}
+        </button>
+
+        <div className="finish">
+          <button className="btn btn-primary btn-block" onClick={() => dispatch({ type: 'workout/finish' })} disabled={doneCount === 0}>
+            <Icon name="check" size={18} /> {t('workout.finish')}
+          </button>
+          {doneCount === 0 && <p className="muted small center">{t('workout.finishHint')}</p>}
+          <ConfirmButton className="btn btn-ghost danger btn-block" confirmLabel={t('workout.discardConfirm')} onConfirm={() => dispatch({ type: 'workout/discard' })}>
+            {t('workout.discard')}
+          </ConfirmButton>
+        </div>
+      </div>
+      </aside>
+
+      <div className="workout split-main">
         {w.exercises.map((ex, exIndex) => {
           const info = exercises.get(ex.exerciseId);
           const last = lastSetsFor(state, ex.exerciseId);
@@ -137,8 +153,7 @@ function ActiveWorkout() {
           const nextKg = parseNum(ex.sets.find((s) => !s.done)?.kg);
           const currentKg = nextKg || parseNum(filled[filled.length - 1]?.kg);
           return (
-            <section key={exIndex} {...sortable.itemProps(exIndex)}
-              className={`card exercise ${sortable.itemProps(exIndex).className}`}>
+            <section key={exIndex} ref={sortable.itemRef(exIndex)} className="card exercise">
               <header className="exercise-head">
                 <div>
                   <h2>{exName(info)}</h2>
@@ -193,20 +208,7 @@ function ActiveWorkout() {
             </section>
           );
         })}
-
-        <button className="btn btn-block" onClick={() => setPicking(true)}>
-          <Icon name="plus" size={18} /> {t('picker.title')}
-        </button>
-
-        <div className="finish">
-          <button className="btn btn-primary btn-block" onClick={() => dispatch({ type: 'workout/finish' })} disabled={doneCount === 0}>
-            <Icon name="check" size={18} /> {t('workout.finish')}
-          </button>
-          {doneCount === 0 && <p className="muted small center">{t('workout.finishHint')}</p>}
-          <ConfirmButton className="btn btn-ghost danger btn-block" confirmLabel={t('workout.discardConfirm')} onConfirm={() => dispatch({ type: 'workout/discard' })}>
-            {t('workout.discard')}
-          </ConfirmButton>
-        </div>
+      </div>
       </div>
 
       {restEnd && <RestTimer endsAt={restEnd} total={state.settings.restSeconds} onChange={setRestEnd} />}
@@ -222,4 +224,14 @@ function ActiveWorkout() {
       )}
     </>
   );
+}
+
+/** Trainingsuhr als eigene Komponente: Nur sie wird jede Sekunde neu gezeichnet, nicht das ganze Training. */
+function ElapsedClock({ startedAt }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return <span className="elapsed-time num" role="timer">{fmtClock(now - new Date(startedAt).getTime())}</span>;
 }

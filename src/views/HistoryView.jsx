@@ -46,7 +46,7 @@ function WorkoutList() {
   }
 
   return (
-    <ul className="cards">
+    <ul className="cards cards-grid">
       {state.workouts.map((w) => {
         const isOpen = open === w.id;
         const sets = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
@@ -119,6 +119,8 @@ function Progress() {
 
   return (
     <>
+      <div className="progress-layout">
+      <div className="progress-side">
       <label className="field">
         <span className="field-label">{t('progress.exercise')}</span>
         <select id="progress-exercise" className="text-input" value={exerciseId} onChange={(e) => setSelected(e.target.value)}>
@@ -140,10 +142,12 @@ function Progress() {
           <span className="stat-label">{t('progress.sinceFirst')}</span>
         </div>
       </section>
+      </div>
 
       <div className="card chart-card">
         <h3 className="small muted">{t(isBodyweight ? 'progress.chartReps' : 'progress.chart1rm')}</h3>
         <ProgressChart points={points} unit={isBodyweight ? t('workout.reps') : 'kg'} />
+      </div>
       </div>
     </>
   );

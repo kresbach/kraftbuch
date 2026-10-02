@@ -1,13 +1,25 @@
+import { useEffect, useRef, useState } from 'react';
 import { fmtNum, fmtShortDate } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 
 // Liniendiagramm: Wert je Trainingstag (z. B. geschätztes 1RM) über die Zeit.
 export function ProgressChart({ points, unit = 'kg' }) {
   const { t } = useI18n();
+  // In echter Pixelbreite zeichnen, damit Schrift und Linien auf großen Bildschirmen nicht mitwachsen
+  const wrap = useRef(null);
+  const [width, setWidth] = useState(340);
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([entry]) => setWidth(Math.max(260, Math.round(entry.contentRect.width))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [points.length < 2]);
+
   if (points.length < 2) {
     return <p className="muted chart-empty">{t('progress.chartEmpty')}</p>;
   }
-  const W = 340, H = 180, L = 40, R = 14, T = 14, B = 26;
+  const W = width, H = Math.round(Math.min(340, Math.max(180, W * 0.42))), L = 40, R = 14, T = 14, B = 26;
   const xs = points.map((p) => new Date(p.date).getTime());
   const ys = points.map((p) => p.value);
   const x0 = Math.min(...xs), x1 = Math.max(...xs);
@@ -24,6 +36,7 @@ export function ProgressChart({ points, unit = 'kg' }) {
   const last = points[points.length - 1];
 
   return (
+    <div ref={wrap} className="chart-wrap">
     <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img"
       aria-label={t('progress.chartAria', { from: fmtNum(points[0].value), to: fmtNum(last.value), unit })}>
       {ticks.map((v) => (
@@ -40,6 +53,7 @@ export function ProgressChart({ points, unit = 'kg' }) {
         <circle key={i} className="chart-dot" cx={sx(xs[i])} cy={sy(p.value)} r={i === points.length - 1 ? 4.5 : 2.5} />
       ))}
     </svg>
+    </div>
   );
 }
 

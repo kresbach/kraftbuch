@@ -1,5 +1,5 @@
 // Stellt den Zustand per Context bereit und speichert ihn lokal auf dem Gerät.
-import { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
 import { exerciseMap, initialState, rootReducer } from './reducer.js';
 
 const STORAGE_KEY = 'kraftbuch:v1';
@@ -15,16 +15,45 @@ function load() {
   return initialState;
 }
 
+function persist(state) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Speichern fehlgeschlagen – Daten bleiben bis zum Schließen im Speicher.
+  }
+}
+
 export function StoreProvider({ children }) {
   const [state, dispatch] = useReducer(rootReducer, undefined, load);
 
+  // Speichern gebündelt: nicht bei jedem Tastendruck den ganzen Zustand serialisieren, sondern
+  // kurz nach der letzten Änderung – und sofort, wenn die App in den Hintergrund geht.
+  const latest = useRef(state);
+  latest.current = state;
+  const saveTimer = useRef(null);
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // Speichern fehlgeschlagen – Daten bleiben bis zum Schließen im Speicher.
-    }
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      persist(latest.current);
+    }, 400);
   }, [state]);
+  useEffect(() => {
+    const flush = () => {
+      if (saveTimer.current == null) return;
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      persist(latest.current);
+    };
+    const onVisibility = () => document.visibilityState === 'hidden' && flush();
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
+  }, []);
 
   // Browser bitten, die Daten nicht automatisch zu löschen (wichtig unter iOS).
   useEffect(() => {

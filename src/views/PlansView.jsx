@@ -44,7 +44,7 @@ export default function PlansView({ goTo }) {
 
       <ul className="cards section">
         {state.plans.map((plan, index) => (
-          <li key={plan.id} {...sortable.itemProps(index)} className={`card ${sortable.itemProps(index).className}`}>
+          <li key={plan.id} ref={sortable.itemRef(index)} className="card">
             <DragHandle className="drag-handle card-corner" label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
             <button className="card-button" onClick={() => setEditing({ ...structuredClone(plan), name: planName(plan.id, plan.name) })}>
               <h3>{planName(plan.id, plan.name)}</h3>
@@ -115,7 +115,7 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
         {plan.exercises.length === 0 && <p className="muted">{t('planEditor.empty')}</p>}
         <ul className="editor-list">
           {plan.exercises.map((pe, i) => (
-            <li key={i} {...sortable.itemProps(i)} className={`card editor-line ${sortable.itemProps(i).className}`}>
+            <li key={i} ref={sortable.itemRef(i)} className="card editor-line">
               <div className="editor-line-top">
                 <span className="editor-no num">{i + 1}</span>
                 <strong>{exName(exercises.get(pe.exerciseId))}</strong>

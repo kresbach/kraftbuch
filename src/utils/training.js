@@ -32,10 +32,13 @@ export const PLATES = [
   { kg: 1.25, color: '#6b7385' },
 ];
 
+const MAX_PLATES_PER_SIDE = 12; // mehr passt auf keine Hantelstange
+
 /** Scheiben pro Seite für ein Zielgewicht bei gegebener Stange; null wenn nicht ladbar. */
 export function platesPerSide(total, bar = 20) {
   let rest = (total - bar) / 2;
-  if (!(rest > 0)) return null;
+  // Unrealistische Eingaben (Vertipper wie 100000) nicht durchrechnen – das fror die App ein
+  if (!(rest > 0) || rest > PLATES[0].kg * MAX_PLATES_PER_SIDE) return null;
   const result = [];
   for (const p of PLATES) {
     while (rest >= p.kg - 1e-9) {

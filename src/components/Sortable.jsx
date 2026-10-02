@@ -1,7 +1,11 @@
 // Umsortieren per Drag & Drop mit Pointer-Events – funktioniert mit Finger (iOS/Android) und Maus.
 // Gezogen wird nur am Griff; die übrigen Einträge rutschen sichtbar zur Seite.
 // Am Bildschirmrand scrollt die Seite mit. Tastatur: Pfeil hoch/runter am Griff.
-import { useEffect, useRef, useState } from 'react';
+//
+// Performance: Während des Ziehens rendert React nichts. Positionen werden höchstens einmal pro
+// Bildschirm-Frame direkt per `transform` gesetzt (GPU-beschleunigt, kein Layout); erst beim
+// Loslassen wird die neue Reihenfolge an React übergeben.
+import { useEffect, useRef } from 'react';
 import { Icon } from './Icon.jsx';
 
 export { moveItem } from '../utils/moveItem.js';
@@ -14,7 +18,8 @@ export function useSortable(onMove) {
   const handles = useRef([]);
   const drag = useRef(null);
   const focusAfterMove = useRef(null);
-  const [view, setView] = useState(null); // {from, to, dy, shift}
+  const onMoveRef = useRef(onMove);
+  onMoveRef.current = onMove;
 
   // Nach einem Verschieben per Tastatur den Griff des verschobenen Eintrags fokussieren
   useEffect(() => {
@@ -25,35 +30,41 @@ export function useSortable(onMove) {
 
   useEffect(() => () => end(false), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function update() {
+  /** Ein Frame: Auto-Scroll, Zielposition berechnen, Transforms setzen. */
+  function frame() {
     const d = drag.current;
     if (!d) return;
-    const dy = d.lastClientY + window.scrollY - d.startPageY;
+    d.raf = requestAnimationFrame(frame);
+
+    // Auto-Scroll nur in Zugrichtung (Antippen nahe am Rand scrollt nicht)
+    const y = d.lastClientY;
+    const bottom = window.innerHeight - EDGE - 70; // Tab-Leiste berücksichtigen
+    const movedUp = y < d.startClientY - MIN_MOVE;
+    const movedDown = y > d.startClientY + MIN_MOVE;
+    const v = movedUp && y < EDGE ? -Math.ceil((EDGE - y) / 8)
+      : movedDown && y > bottom ? Math.ceil((y - bottom) / 8) : 0;
+    if (v) window.scrollBy(0, v);
+
+    const dy = y + window.scrollY - d.startPageY;
+    if (dy === d.lastDy) return; // nichts verändert → nichts zu tun
+    d.lastDy = dy;
+
     const r = d.rects[d.from];
     const center = r.top + dy + r.height / 2;
     let to = d.from;
     for (let i = d.from + 1; i < d.rects.length; i++) if (center > d.rects[i].top + d.rects[i].height / 2) to = i;
     for (let i = d.from - 1; i >= 0; i--) if (center < d.rects[i].top + d.rects[i].height / 2) to = i;
-    d.to = to;
-    setView({ from: d.from, to, dy, shift: r.height + d.gap });
-  }
 
-  function autoScroll() {
-    const d = drag.current;
-    if (!d) return;
-    const y = d.lastClientY;
-    const bottom = window.innerHeight - EDGE - 70; // Tab-Leiste berücksichtigen
-    // Nur in Zugrichtung scrollen: wer einen Griff nahe am Rand nur antippt oder in die
-    // Gegenrichtung zieht, soll die Seite nicht ungewollt verschieben.
-    const movedUp = y < d.startClientY - MIN_MOVE;
-    const movedDown = y > d.startClientY + MIN_MOVE;
-    const v = movedUp && y < EDGE ? -Math.ceil((EDGE - y) / 8)
-      : movedDown && y > bottom ? Math.ceil((y - bottom) / 8) : 0;
-    if (v) {
-      window.scrollBy(0, v);
-      update();
+    d.els[d.from].style.transform = `translate3d(0, ${dy}px, 0)`;
+    if (to !== d.to) {
+      d.to = to;
+      const shift = r.height + d.gap;
+      d.els.forEach((el, i) => {
+        if (i === d.from) return;
+        const s = d.from < to && i > d.from && i <= to ? -shift : to < d.from && i >= to && i < d.from ? shift : 0;
+        el.style.transform = s ? `translate3d(0, ${s}px, 0)` : '';
+      });
     }
-    d.raf = requestAnimationFrame(autoScroll);
   }
 
   function end(commit) {
@@ -62,8 +73,11 @@ export function useSortable(onMove) {
     cancelAnimationFrame(d.raf);
     drag.current = null;
     document.body.classList.remove('is-sorting');
-    setView(null);
-    if (commit && d.to !== d.from) onMove(d.from, d.to);
+    d.els.forEach((el) => {
+      el.classList.remove('is-dragging', 'is-shifting');
+      el.style.transform = '';
+    });
+    if (commit && d.to !== d.from) onMoveRef.current(d.from, d.to);
   }
 
   function handleProps(i, count) {
@@ -73,20 +87,22 @@ export function useSortable(onMove) {
         if (e.button > 0) return;
         e.preventDefault();
         e.currentTarget.setPointerCapture?.(e.pointerId);
-        const rects = items.current.slice(0, count).map((el) => {
+        const els = items.current.slice(0, count);
+        const rects = els.map((el) => {
           const b = el.getBoundingClientRect();
           return { top: b.top + window.scrollY, height: b.height };
         });
         const gap = rects.length > 1 ? Math.max(0, rects[1].top - rects[0].top - rects[0].height) : 0;
-        drag.current = { from: i, to: i, startPageY: e.clientY + window.scrollY, startClientY: e.clientY, lastClientY: e.clientY, rects, gap };
+        els.forEach((el, j) => el.classList.add(j === i ? 'is-dragging' : 'is-shifting'));
         document.body.classList.add('is-sorting');
-        setView({ from: i, to: i, dy: 0, shift: 0 });
-        drag.current.raf = requestAnimationFrame(autoScroll);
+        drag.current = {
+          from: i, to: i, els, rects, gap, lastDy: null,
+          startPageY: e.clientY + window.scrollY, startClientY: e.clientY, lastClientY: e.clientY,
+        };
+        drag.current.raf = requestAnimationFrame(frame);
       },
       onPointerMove: (e) => {
-        if (!drag.current) return;
-        drag.current.lastClientY = e.clientY;
-        update();
+        if (drag.current) drag.current.lastClientY = e.clientY; // verarbeitet im nächsten Frame
       },
       onPointerUp: () => end(true),
       onPointerCancel: () => end(false),
@@ -95,27 +111,15 @@ export function useSortable(onMove) {
         if (to == null || to < 0 || to >= count) return;
         e.preventDefault();
         focusAfterMove.current = to;
-        onMove(i, to);
+        onMoveRef.current(i, to);
       },
     };
   }
 
-  function itemProps(i) {
-    let transform;
-    let className = '';
-    if (view) {
-      const { from, to, dy, shift } = view;
-      if (i === from) {
-        transform = `translateY(${dy}px)`;
-        className = 'is-dragging';
-      } else if (from < to && i > from && i <= to) transform = `translateY(${-shift}px)`;
-      else if (to < from && i >= to && i < from) transform = `translateY(${shift}px)`;
-      if (i !== from) className = 'is-shifting';
-    }
-    return { ref: (el) => { items.current[i] = el; }, className, style: transform ? { transform } : undefined };
-  }
+  /** Ref für einen sortierbaren Eintrag. */
+  const itemRef = (i) => (el) => { items.current[i] = el; };
 
-  return { handleProps, itemProps, dragging: !!view };
+  return { handleProps, itemRef };
 }
 
 /** Griff zum Ziehen (⠿). */

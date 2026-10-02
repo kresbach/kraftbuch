@@ -104,13 +104,13 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   inset: auto 0 0 0;
   z-index: 20;
   display: grid;
-  /* Tabs teilen sich höchstens die Inhaltsbreite und bleiben mittig, statt sich über den Bildschirm zu verteilen */
-  grid-template-columns: repeat(5, minmax(0, calc(var(--content-w) / 5)));
+  /* Höchstens 96 px pro Tab, mittig – auf breiten Bildschirmen rücken die Tabs zusammen */
+  grid-template-columns: repeat(5, minmax(0, 96px));
   justify-content: center;
   padding-bottom: var(--safe-b);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Deckende Farbe statt backdrop-filter: Blur über die ganze Fensterbreite kostet bei jedem
+     Scroll- und Drag-Frame viel Rechenzeit, vor allem auf großen Desktop-Bildschirmen. */
+  background: var(--surface);
   border-top: 1px solid var(--line);
 }
 .tab {
@@ -122,6 +122,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .tab.is-active { color: var(--accent-text); }
+@media (hover: hover) { .tab:not(.is-active):hover { color: var(--fg); } }
 .tab-icon { position: relative; display: inline-flex; }
 .tab-dot { position: absolute; top: -2px; right: -6px; width: 9px; height: 9px; border-radius: 50%; background: var(--good); border: 2px solid var(--surface); }
 
@@ -220,6 +221,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 .list-item { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 16px; min-height: 56px; }
 .list-item + .list-item { border-top: 1px solid var(--line); }
+.list-item, .cards-grid > .card { content-visibility: auto; contain-intrinsic-size: auto 60px; }
 .list-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -317,9 +319,9 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .card-corner + .card-button { padding-right: 44px; }
 .version { padding-top: 8px; }
 .is-sorting, .is-sorting * { user-select: none; -webkit-user-select: none; cursor: grabbing !important; }
-.is-shifting { transition: transform 0.18s ease; }
+.is-shifting { transition: transform 0.18s ease; will-change: transform; }
 .is-dragging {
-  position: relative; z-index: 5;
+  position: relative; z-index: 5; will-change: transform;
   box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
   border-color: var(--accent);
 }
@@ -347,6 +349,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .workout-detail .btn { align-self: flex-start; }
 
 .chart-card { padding: 14px 12px 8px; display: flex; flex-direction: column; gap: 6px; }
+.chart-wrap { width: 100%; }
 .chart { width: 100%; height: auto; display: block; }
 .chart-grid { stroke: var(--line); stroke-width: 1; }
 .chart-label { fill: var(--muted); font-size: 11px; font-family: var(--font); }
@@ -390,4 +393,56 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- Hover-Rückmeldung mit Maus ---------- */
+@media (hover: hover) {
+  .btn:not(:disabled):hover { border-color: var(--accent); }
+  .btn-primary:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 88%, var(--fg)); }
+  .btn-ghost:not(:disabled):hover { background: var(--surface-2); border-color: transparent; }
+  .card-button:hover h3 { color: var(--accent-text); }
+  .chip:hover { border-color: var(--accent); }
+  .pick-item:hover, .list-item:hover { background: var(--surface-2); }
+  .icon-btn:hover { background: var(--surface-2); }
+  .segmented button:not(.is-on):hover { color: var(--fg); }
+}
+
+/* ---------- Layout: Seitenspalte + Hauptbereich ---------- */
+.split { display: flex; flex-direction: column; gap: 16px; }
+.split-side { display: flex; flex-direction: column; gap: 12px; }
+.workout-actions { display: flex; flex-direction: column; gap: 12px; }
+.groups, .progress-layout, .progress-side { display: flex; flex-direction: column; gap: 16px; }
+
+/* Handy: im laufenden Training Status oben, Übungen, dann Aktionen */
+.workout-split { gap: 12px; }
+.workout-split > .split-side { display: contents; }
+.workout-split .workout-status { order: 0; }
+.workout-split > .split-main { order: 1; }
+.workout-split .workout-actions { order: 2; }
+
+/* Tablet */
+@media (min-width: 768px) {
+  .content { padding-inline: 24px; }
+  .cards-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+
+/* Desktop: breitere Ansichten mit Seitenspalte */
+@media (min-width: 1024px) {
+  .content.is-wide { max-width: 1120px; }
+  .content.is-wide > .segmented { max-width: 460px; }
+
+  .split { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .split-side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); }
+  .split .stats { grid-template-columns: 1fr; }
+  .split .stat { flex-direction: row; align-items: baseline; gap: 10px; }
+
+  .workout-split > .split-side { display: flex; }
+  .workout-split .workout-status { grid-template-columns: 1fr; }
+
+  .groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; align-items: start; }
+  .groups > .section { margin: 0; }
+
+  .progress-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .progress-side .stats { grid-template-columns: 1fr; }
+  .chart-card { padding: 20px; }
 }

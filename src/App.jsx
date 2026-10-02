@@ -9,10 +9,10 @@ import { Icon } from './components/Icon.jsx';
 import { useI18n } from './i18n/index.jsx';
 
 const TABS = [
-  { id: 'training', label: 'tab.training', icon: 'dumbbell', View: TrainingView },
+  { id: 'training', label: 'tab.training', icon: 'dumbbell', View: TrainingView, wide: true },
   { id: 'plans', label: 'tab.plans', icon: 'list', View: PlansView },
-  { id: 'exercises', label: 'tab.exercises', icon: 'book', View: ExercisesView },
-  { id: 'history', label: 'tab.history', icon: 'chart', View: HistoryView },
+  { id: 'exercises', label: 'tab.exercises', icon: 'book', View: ExercisesView, wide: true },
+  { id: 'history', label: 'tab.history', icon: 'chart', View: HistoryView, wide: true },
   { id: 'settings', label: 'tab.settings', icon: 'settings', View: SettingsView },
 ];
 
@@ -20,11 +20,11 @@ export default function App() {
   const [tab, setTab] = useState('training');
   const { state } = useStore();
   const { t } = useI18n();
-  const { View } = TABS.find((x) => x.id === tab);
+  const { View, wide } = TABS.find((x) => x.id === tab);
 
   return (
     <div className="app">
-      <main className="content">
+      <main className={`content ${wide ? 'is-wide' : ''}`}>
         <View goTo={setTab} />
       </main>
       <nav className="tabbar" aria-label={t('tab.nav')}>
