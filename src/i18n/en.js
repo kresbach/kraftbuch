@@ -38,7 +38,9 @@ export default {
     'training.free': 'Free workout',
 
     // Active workout
-    'workout.running': 'Running for {duration} · {done}/{total} sets',
+    'workout.status': 'Workout status',
+    'workout.elapsed': 'Workout time',
+    'workout.setsLabel': 'Sets done',
     'workout.lastTime': 'Last time: {sets}',
     'workout.firstTime': 'First time – good luck!',
     'workout.setsOf': 'Sets {name}',

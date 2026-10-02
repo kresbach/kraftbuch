@@ -38,7 +38,9 @@ export default {
     'training.free': 'Freies Training',
 
     // Laufendes Training
-    'workout.running': 'Läuft seit {duration} · {done}/{total} Sätze',
+    'workout.status': 'Trainingsstand',
+    'workout.elapsed': 'Trainingszeit',
+    'workout.setsLabel': 'Sätze erledigt',
     'workout.lastTime': 'Letztes Mal: {sets}',
     'workout.firstTime': 'Erstes Mal – viel Erfolg!',
     'workout.setsOf': 'Sätze {name}',

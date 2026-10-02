@@ -7,7 +7,7 @@ import { ExercisePicker } from '../components/ExercisePicker.jsx';
 import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
 import { CloudBanner } from '../components/CloudSettings.jsx';
-import { fmtDuration, fmtLongToday, fmtNum, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
+import { fmtClock, fmtLongToday, fmtNum, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 
 export default function TrainingView({ goTo }) {
@@ -89,10 +89,10 @@ function ActiveWorkout() {
   const [restEnd, setRestEnd] = useState(null);
   const [, tick] = useState(0);
 
-  // Dauer-Anzeige jede halbe Minute aktualisieren.
+  // Trainingsuhr jede Sekunde aktualisieren.
   useEffect(() => {
-    const t = setInterval(() => tick((n) => n + 1), 30000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   const doneCount = w.exercises.reduce((n, ex) => n + ex.sets.filter((s) => s.done).length, 0);
@@ -106,9 +106,22 @@ function ActiveWorkout() {
   return (
     <>
       <header className="page-head">
-        <p className="eyebrow">{t('workout.running', { duration: fmtDuration(Date.now() - new Date(w.startedAt).getTime()), done: doneCount, total: totalCount })}</p>
         <h1>{planName(w.planId, w.name)}</h1>
       </header>
+
+      <section className="workout-status" aria-label={t('workout.status')}>
+        <div className="elapsed">
+          <span className="status-label"><Icon name="timer" size={16} /> {t('workout.elapsed')}</span>
+          <span className="elapsed-time num" role="timer">{fmtClock(Date.now() - new Date(w.startedAt).getTime())}</span>
+        </div>
+        <div className="sets-progress">
+          <span className="status-label">{t('workout.setsLabel')}</span>
+          <span className="sets-count num">{doneCount}<span className="muted">/{totalCount}</span></span>
+          <span className="progress-track" aria-hidden="true">
+            <span className="progress-fill" style={{ transform: `scaleX(${totalCount ? doneCount / totalCount : 0})` }} />
+          </span>
+        </div>
+      </section>
 
       <div className="workout">
         {w.exercises.map((ex, exIndex) => {
