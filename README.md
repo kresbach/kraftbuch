@@ -54,7 +54,7 @@ npm run icons     # App-Icons in public/ neu erzeugen
 
 Bei jedem Push auf den Branch `claude/artifact-webpage-creation-yd1w4c` baut der Workflow
 `.github/workflows/deploy-pages.yml` die App und veröffentlicht sie unter
-**https://kresbach.github.io/testPhil/**.
+**https://kresbach.github.io/kraftbuch/**.
 
 Einmalig nötig: im Repository unter *Settings → Pages → Build and deployment → Source* „GitHub Actions“ auswählen.
 Danach den Workflow unter *Actions* einmal neu starten (oder einfach erneut pushen).

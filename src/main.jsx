@@ -6,6 +6,7 @@ import { StoreProvider } from './state/store.jsx';
 import { CloudSyncProvider } from './cloud/CloudSync.jsx';
 import { I18nProvider } from './i18n/index.jsx';
 import './index.css';
+import { relocateIfMoved } from './utils/relocate.js';
 
 // Service Worker: App offline verfügbar machen und Updates automatisch laden.
 // Installierte Web-Apps (v. a. iOS) bleiben oft lange im Speicher und prüfen dann nicht von selbst
@@ -32,3 +33,7 @@ createRoot(document.getElementById('root')).render(
     </StoreProvider>
   </StrictMode>,
 );
+
+// Läuft die App noch unter der alten Adresse, zur neuen umziehen (Daten bleiben erhalten).
+relocateIfMoved();
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && relocateIfMoved());
