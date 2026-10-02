@@ -1,18 +1,19 @@
 /* Layout: eine Spalte (max. 640 px), feste Tab-Leiste unten wie bei nativen Apps. */
 :root {
-  --bg: #f4f6fa;
+  /* Olivgrün als Akzent, Neutraltöne leicht oliv getönt; „erledigt“ bleibt ein klareres Grün */
+  --bg: #f4f5ee;
   --surface: #ffffff;
-  --surface-2: #eaeef5;
-  --line: #dde3ec;
-  --fg: #141a26;
-  --muted: #5d6779;
-  --accent: #1f4fc8;
+  --surface-2: #e9ebdd;
+  --line: #dadccb;
+  --fg: #1c1f14;
+  --muted: #5e634f;
+  --accent: #5a6b2b;
   --accent-fg: #ffffff;
-  --accent-soft: #e3eafb;
-  --good: #1f8a4c;
-  --good-soft: #def3e6;
-  --danger: #c4372d;
-
+  --accent-soft: #e6ead2;
+  --good: #2c7a4f;
+  --good-fg: #ffffff;
+  --good-soft: #dcefe2;
+  --danger: #b9412e;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --radius: 14px;
   --radius-sm: 10px;
@@ -23,18 +24,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0e121a;
-    --surface: #171c27;
-    --surface-2: #212838;
-    --line: #2a3243;
-    --fg: #e9edf5;
-    --muted: #97a1b4;
-    --accent: #7c9dff;
-    --accent-fg: #0b1020;
-    --accent-soft: #1d2846;
-    --good: #5fd08f;
-    --good-soft: #17301f;
-    --danger: #ff7b70;
+    --bg: #11130c;
+    --surface: #1a1d13;
+    --surface-2: #24281b;
+    --line: #2f3424;
+    --fg: #eceee2;
+    --muted: #a2a791;
+    --accent: #b3c26a;
+    --accent-fg: #1a1f0b;
+    --accent-soft: #2a3119;
+    --good: #6ccf98;
+    --good-fg: #0d2617;
+    --good-soft: #173222;
+    --danger: #ff8a73;
     color-scheme: dark;
   }
 }
@@ -239,7 +241,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   width: 52px; height: 46px; display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--muted);
 }
-.check.is-on { background: var(--good); border-color: var(--good); color: #fff; }
+.check.is-on { background: var(--good); border-color: var(--good); color: var(--good-fg); }
 .set-row.is-done .num-input { background: var(--good-soft); border-color: transparent; }
 .row-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
@@ -270,7 +272,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .rest-label { flex: 1; font-weight: 650; }
 .rest-time { font-size: 20px; font-weight: 800; }
 .rest .btn { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--bg) 35%, transparent); }
-.rest.is-over { background: var(--good); color: #fff; }
+.rest.is-over { background: var(--good); color: var(--good-fg); }
 
 /* ---------- Plan-Editor ---------- */
 .editor-list { display: flex; flex-direction: column; gap: 8px; }

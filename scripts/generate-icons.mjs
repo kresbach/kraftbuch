@@ -1,8 +1,8 @@
-// Erzeugt die PNG-App-Icons (Hantel auf blauem Grund) ohne externe Bibliotheken.
+// Erzeugt die PNG-App-Icons (Hantel auf olivgrünem Grund) ohne externe Bibliotheken.
 import { writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 
-const BG = [31, 79, 200];
+const BG = [90, 107, 43];
 const FG = [255, 255, 255];
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {
