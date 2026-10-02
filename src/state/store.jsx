@@ -1,6 +1,6 @@
 // Stellt den Zustand per Context bereit und speichert ihn lokal auf dem Gerät.
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
-import { exerciseMap, initialState, reducer } from './reducer.js';
+import { exerciseMap, initialState, rootReducer } from './reducer.js';
 
 const STORAGE_KEY = 'kraftbuch:v1';
 const StoreContext = createContext(null);
@@ -16,7 +16,7 @@ function load() {
 }
 
 export function StoreProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, undefined, load);
+  const [state, dispatch] = useReducer(rootReducer, undefined, load);
 
   useEffect(() => {
     try {

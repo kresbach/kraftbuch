@@ -26,7 +26,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node src/utils/training.test.mjs
+      - run: node src/cloud/syncLogic.test.mjs
       - run: npm run build
+        env:
+          # Öffentliche OAuth-Client-ID für Google Drive (Repository-Variable, kein Geheimnis)
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

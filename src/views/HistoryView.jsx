@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '../state/store.jsx';
 import { Icon } from '../components/Icon.jsx';
 import { ConfirmButton } from '../components/ConfirmButton.jsx';
 import { ProgressChart } from '../components/ProgressChart.jsx';
+import { CloudSettings } from '../components/CloudSettings.jsx';
 import { estimate1RM, fmtDate, fmtDuration, fmtKg, fmtNum, workoutVolume } from '../utils/training.js';
 
 const SECTIONS = [
@@ -151,32 +152,6 @@ function Progress() {
 
 function Settings() {
   const { state, dispatch } = useStore();
-  const fileRef = useRef(null);
-  const [message, setMessage] = useState('');
-
-  function exportData() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `kraftbuch-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    setMessage('Sicherung wurde als Datei gespeichert.');
-  }
-
-  async function importData(e) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    try {
-      const data = JSON.parse(await file.text());
-      if (!Array.isArray(data.workouts) || !Array.isArray(data.plans)) throw new Error('format');
-      dispatch({ type: 'data/import', data });
-      setMessage(`Importiert: ${data.workouts.length} Trainings und ${data.plans.length} Pläne.`);
-    } catch {
-      setMessage('Diese Datei ist keine Kraftbuch-Sicherung. Wähle eine .json-Datei, die du hier exportiert hast.');
-    }
-  }
 
   return (
     <>
@@ -204,19 +179,7 @@ function Settings() {
         </div>
       </fieldset>
 
-      <section className="section">
-        <h2>Datensicherung</h2>
-        <p className="muted small">
-          Deine Daten liegen nur auf diesem Gerät im Browser. Sichere sie ab und zu als Datei, damit nichts verloren geht –
-          etwa beim Löschen der Browserdaten oder beim Wechsel auf ein neues Handy.
-        </p>
-        <div className="row-actions">
-          <button className="btn" onClick={exportData}>Daten exportieren</button>
-          <button className="btn" onClick={() => fileRef.current?.click()}>Sicherung importieren</button>
-          <input ref={fileRef} id="import-file" type="file" accept="application/json,.json" hidden onChange={importData} />
-        </div>
-        {message && <p className="note" role="status">{message}</p>}
-      </section>
+      <CloudSettings />
     </>
   );
 }

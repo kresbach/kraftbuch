@@ -154,6 +154,9 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 }
 .error { color: var(--danger); font-weight: 600; }
 .note { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--accent-soft); font-size: 14px; }
+.note.conflict { display: flex; flex-direction: column; gap: 8px; }
+.banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.banner span { flex: 1 1 200px; min-width: 0; }
 
 .search {
   flex: 1; min-width: 0;

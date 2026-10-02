@@ -11,9 +11,33 @@ Läuft im Browser auf iOS und Android, lässt sich auf den Homescreen legen und 
   Zwei Beispielpläne (Ganzkörper A/B) sind vorinstalliert.
 - **Übungen** – 23 Standardübungen nach Muskelgruppe, dazu eigene Übungen anlegen.
 - **Verlauf** – abgeschlossene Trainings, Fortschrittsdiagramm pro Übung (geschätztes 1RM nach Epley),
-  Einstellungen sowie Export/Import der Daten als JSON-Datei.
+  Einstellungen und Speicherort.
 
-Alle Daten bleiben lokal auf dem Gerät (`localStorage`). Es gibt keinen Server und kein Konto.
+Die Daten liegen auf dem Gerät (`localStorage`). Unter *Verlauf → Einstellungen → Speicherort* lässt sich zusätzlich wählen:
+
+- **Google Drive** – automatischer Abgleich über die Datei `Kraftbuch-Daten.json` im eigenen Drive.
+  Funktioniert auf allen Geräten, auf denen man sich mit demselben Google-Konto anmeldet.
+  Haben zwei Geräte unabhängig Änderungen, fragt die App, welcher Stand gelten soll.
+- **iCloud Drive** – Sicherung über das Teilen-Menü („In Dateien sichern“) und Laden per Dateiauswahl.
+  Die App erinnert an die Sicherung, sobald es neue Daten gibt. Ein automatischer iCloud-Abgleich
+  wäre nur mit Apples CloudKit möglich (kostenpflichtiges Apple-Developer-Konto).
+
+## Google Drive einrichten (einmalig)
+
+1. In der [Google Cloud Console](https://console.cloud.google.com/) ein Projekt anlegen.
+2. *APIs & Dienste → Bibliothek*: **Google Drive API** aktivieren.
+3. *OAuth-Zustimmungsbildschirm*: Typ „Extern“, App-Name „Kraftbuch“, eigene E-Mail eintragen.
+   Unter *Testnutzer* das eigene Google-Konto hinzufügen (und alle, die die App nutzen sollen).
+   Als Bereich genügt `.../auth/drive.file`.
+4. *Anmeldedaten → Anmeldedaten erstellen → OAuth-Client-ID*, Typ **Webanwendung**.
+   Unter *Autorisierte JavaScript-Quellen* `https://kresbach.github.io` eintragen
+   (für lokale Tests zusätzlich `http://localhost:5173`).
+5. Die angezeigte Client-ID (endet auf `.apps.googleusercontent.com`) im GitHub-Repository unter
+   *Settings → Secrets and variables → Actions → Variables* als Variable **`GOOGLE_CLIENT_ID`** anlegen.
+6. Workflow erneut ausführen. Lokal: `VITE_GOOGLE_CLIENT_ID=… npm run dev`.
+
+Solange die App im Testmodus ist, zeigt Google beim Anmelden den Hinweis „Google hat diese App nicht überprüft“ –
+über *Erweitert → Weiter zu Kraftbuch* geht es weiter.
 
 ## Entwicklung
 
@@ -51,6 +75,7 @@ src/
   data/                 Standardübungen und Beispielpläne
   state/reducer.js      Datenmodell und alle Änderungen am Zustand
   state/store.jsx       React-Context, Speichern in localStorage
+  cloud/                Google-Drive-Abgleich und iCloud-Sicherung
   utils/training.js     Rechenhelfer (1RM, Volumen, Scheiben, Datum)
   components/           Wiederverwendbare Bausteine (Auswahl-Dialog, Timer, Diagramm …)
   views/                Die vier Hauptansichten

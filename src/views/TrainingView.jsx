@@ -6,6 +6,7 @@ import { ConfirmButton } from '../components/ConfirmButton.jsx';
 import { ExercisePicker } from '../components/ExercisePicker.jsx';
 import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
+import { CloudBanner } from '../components/CloudSettings.jsx';
 import { fmtDuration, fmtNum, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
 
 export default function TrainingView({ goTo }) {
@@ -33,6 +34,8 @@ function StartScreen({ goTo }) {
         <p className="eyebrow">{new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         <h1>Training</h1>
       </header>
+
+      <CloudBanner />
 
       <section className="stats" aria-label="Diese Woche">
         <div className="stat"><span className="stat-value num">{thisWeek.length}</span><span className="stat-label">Trainings diese Woche</span></div>

@@ -10,7 +10,27 @@ export const initialState = {
   workouts: [], // abgeschlossene Trainings, neuestes zuerst
   activeWorkout: null, // laufendes Training
   settings: { restSeconds: 90, barKg: 20 },
+  updatedAt: 0, // Zeitpunkt der letzten Änderung an synchronisierten Daten (für Cloud-Abgleich)
 };
+
+// Diese Teile des Zustands werden gesichert bzw. mit der Cloud abgeglichen.
+// Das laufende Training bleibt bewusst nur auf dem Gerät.
+export const SYNCED_KEYS = ['customExercises', 'plans', 'workouts', 'settings'];
+
+export function syncedData(state) {
+  const data = { app: 'kraftbuch', version: state.version, updatedAt: state.updatedAt };
+  for (const k of SYNCED_KEYS) data[k] = state[k];
+  return data;
+}
+
+/** Prüft, ob eine Datei/Cloud-Antwort eine Kraftbuch-Sicherung ist. */
+export const isBackup = (data) => !!data && Array.isArray(data.workouts) && Array.isArray(data.plans);
+
+function pickSynced(data) {
+  const out = {};
+  for (const k of SYNCED_KEYS) if (data[k] !== undefined) out[k] = data[k];
+  return out;
+}
 
 /** Alle Übungen (Standard + eigene) als Map id → Übung. */
 export function exerciseMap(state) {
@@ -135,10 +155,19 @@ export function reducer(state, action) {
       return { ...state, workouts: state.workouts.filter((w) => w.id !== action.id) };
     case 'settings/update':
       return { ...state, settings: { ...state.settings, ...action.patch } };
-    case 'data/import':
-      return { ...initialState, ...action.data };
+    case 'data/import': // aus Datei: gilt als neue Änderung
+      return { ...state, ...pickSynced(action.data) };
+    case 'data/replace': // aus der Cloud: übernimmt deren Stand unverändert
+      return { ...state, ...pickSynced(action.data), updatedAt: action.data.updatedAt || Date.now() };
 
     default:
       throw new Error(`Unbekannte Aktion: ${action.type}`);
   }
+}
+
+/** Reducer mit Zeitstempel: jede Änderung an synchronisierten Daten setzt `updatedAt`. */
+export function rootReducer(state, action) {
+  const next = reducer(state, action);
+  if (action.type === 'data/replace' || next === state) return next;
+  return SYNCED_KEYS.some((k) => next[k] !== state[k]) ? { ...next, updatedAt: Date.now() } : next;
 }
