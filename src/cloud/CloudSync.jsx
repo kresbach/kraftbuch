@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useStore } from '../state/store.jsx';
 import { isBackup, syncedData } from '../state/reducer.js';
 import { decideSync } from './syncLogic.js';
+import { saveFile } from '../utils/saveFile.js';
 import { AuthRequired, DriveError, GOOGLE_CLIENT_ID, downloadFile, findFile, signIn, uploadFile } from './googleDrive.js';
 
 const META_KEY = 'kraftbuch:sync';
@@ -156,19 +157,16 @@ export function CloudSyncProvider({ children }) {
   const backupToFile = useCallback(async () => {
     const snapshot = stateRef.current;
     const json = JSON.stringify(syncedData(snapshot), null, 2);
-    const file = new File([json], 'Kraftbuch-Backup.json', { type: 'application/json' });
+    // Auf dem Handy fester Name (alte Sicherung in iCloud Drive ersetzen), am Desktop mit Datum
+    const date = new Date().toISOString().slice(0, 10);
+    const name = matchMedia('(pointer: coarse)').matches ? 'Kraftbuch-Backup.json' : `Kraftbuch-Backup-${date}.json`;
+    const file = new File([json], name, { type: 'application/json' });
     try {
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Kraftbuch' });
-      } else {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(file);
-        a.download = file.name;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      }
+      const how = await saveFile(file);
       setMeta({ lastSyncedAt: snapshot.updatedAt || Date.now(), lastBackupAt: Date.now() });
-      return { ok: true, msg: 'backup.saved' };
+      return how === 'downloaded'
+        ? { ok: true, msg: 'backup.downloaded', vars: { name } }
+        : { ok: true, msg: 'backup.saved' };
     } catch (e) {
       if (e?.name === 'AbortError') return { ok: false, msg: 'backup.cancelled' };
       return { ok: false, msg: 'backup.failed' };

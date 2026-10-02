@@ -166,6 +166,7 @@ export default {
     'cloud.err.corrupt': 'The file in Google Drive is damaged.',
     'cloud.err.unknown': 'Sync failed. {detail}',
     'backup.saved': 'Backup saved.',
+    'backup.downloaded': 'Backup “{name}” was saved to your downloads.',
     'backup.cancelled': 'Backup cancelled.',
     'backup.failed': 'The backup could not be saved.',
     'backup.loaded': 'Loaded: {workouts} workouts and {plans} plans.',

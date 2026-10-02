@@ -166,6 +166,7 @@ export default {
     'cloud.err.corrupt': 'Die Datei in Google Drive ist beschädigt.',
     'cloud.err.unknown': 'Der Abgleich ist fehlgeschlagen. {detail}',
     'backup.saved': 'Sicherung gespeichert.',
+    'backup.downloaded': 'Sicherung „{name}“ wurde in deinen Downloads gespeichert.',
     'backup.cancelled': 'Sicherung abgebrochen.',
     'backup.failed': 'Die Sicherung konnte nicht gespeichert werden.',
     'backup.loaded': 'Geladen: {workouts} Trainings und {plans} Pläne.',
