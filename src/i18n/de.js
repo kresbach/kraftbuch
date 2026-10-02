@@ -9,6 +9,7 @@ export default {
     'tab.plans': 'Pläne',
     'tab.exercises': 'Übungen',
     'tab.history': 'Verlauf',
+    'tab.settings': 'Einstellungen',
     'tab.nav': 'Hauptnavigation',
     'tab.running': 'Training läuft',
 
@@ -106,7 +107,6 @@ export default {
     // Verlauf
     'history.workouts': 'Trainings',
     'history.progress': 'Fortschritt',
-    'history.settings': 'Einstellungen',
     'history.empty': 'Noch keine abgeschlossenen Trainings. Starte unter „Training“ dein erstes – es erscheint danach hier.',
     'history.sets': ({ n }) => (n === 1 ? '1 Satz' : `${n} Sätze`),
     'history.deletedExercise': 'Gelöschte Übung',
@@ -126,7 +126,9 @@ export default {
 
     // Einstellungen
     'settings.language': 'Sprache',
-    'settings.languageAuto': 'Automatisch nach Gerätesprache ({lang}).',
+    'settings.languageAutoOption': 'Automatisch',
+    'settings.languageAuto': 'Folgt der Sprache deines Geräts (zurzeit {lang}).',
+    'settings.languageFixed': 'Gilt unabhängig von der Gerätesprache.',
     'settings.rest': 'Pausenzeit nach einem Satz',
     'settings.bar': 'Gewicht der Langhantelstange (für die Scheibenanzeige)',
 
@@ -168,7 +170,7 @@ export default {
     'backup.invalid': 'Diese Datei ist keine Kraftbuch-Sicherung. Wähle eine .json-Datei, die du hier gesichert hast.',
     'banner.backup': 'Neue Daten seit der letzten iCloud-Sicherung ({ago}).',
     'banner.backupNow': 'Jetzt sichern',
-    'banner.conflict': 'Google Drive: Bitte wähle unter Verlauf → Einstellungen, welche Daten gelten.',
+    'banner.conflict': 'Google Drive: Bitte wähle unter Einstellungen, welche Daten gelten.',
     'banner.auth': 'Google Drive wartet auf deine Anmeldung.',
     'banner.sync': 'Synchronisieren',
     'ago.never': 'noch nie',

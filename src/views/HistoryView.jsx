@@ -3,14 +3,12 @@ import { useStore } from '../state/store.jsx';
 import { Icon } from '../components/Icon.jsx';
 import { ConfirmButton } from '../components/ConfirmButton.jsx';
 import { ProgressChart } from '../components/ProgressChart.jsx';
-import { CloudSettings } from '../components/CloudSettings.jsx';
 import { estimate1RM, fmtDate, fmtDuration, fmtKg, fmtNum, workoutVolume } from '../utils/training.js';
-import { LANGUAGES, deviceLanguage, useI18n } from '../i18n/index.jsx';
+import { useI18n } from '../i18n/index.jsx';
 
 const SECTIONS = [
   { id: 'list', label: 'history.workouts' },
   { id: 'progress', label: 'history.progress' },
-  { id: 'settings', label: 'history.settings' },
 ];
 
 export default function HistoryView() {
@@ -31,7 +29,6 @@ export default function HistoryView() {
       <div className="section">
         {section === 'list' && <WorkoutList />}
         {section === 'progress' && <Progress />}
-        {section === 'settings' && <Settings />}
       </div>
     </>
   );
@@ -148,57 +145,6 @@ function Progress() {
         <h3 className="small muted">{t(isBodyweight ? 'progress.chartReps' : 'progress.chart1rm')}</h3>
         <ProgressChart points={points} unit={isBodyweight ? t('workout.reps') : 'kg'} />
       </div>
-    </>
-  );
-}
-
-/* ---------- Einstellungen & Datensicherung ---------- */
-
-function Settings() {
-  const { state, dispatch } = useStore();
-  const { t, lang } = useI18n();
-
-  return (
-    <>
-      <fieldset className="field">
-        <legend className="field-label">{t('settings.language')}</legend>
-        <div className="segmented" role="radiogroup" aria-label={t('settings.language')}>
-          {LANGUAGES.map((l) => (
-            <button key={l.id} type="button" role="radio" aria-checked={lang === l.id} lang={l.id}
-              className={lang === l.id ? 'is-on' : ''}
-              onClick={() => dispatch({ type: 'settings/update', patch: { lang: l.id } })}>
-              {l.label}
-            </button>
-          ))}
-        </div>
-        {!state.settings.lang && <p className="muted small">{t('settings.languageAuto', { lang: LANGUAGES.find((l) => l.id === deviceLanguage()).label })}</p>}
-      </fieldset>
-
-      <fieldset className="field">
-        <legend className="field-label">{t('settings.rest')}</legend>
-        <div className="segmented">
-          {[60, 90, 120, 180].map((s) => (
-            <button key={s} type="button" className={state.settings.restSeconds === s ? 'is-on' : ''}
-              onClick={() => dispatch({ type: 'settings/update', patch: { restSeconds: s } })}>
-              {s < 120 ? `${s} s` : `${s / 60} min`}
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="field">
-        <legend className="field-label">{t('settings.bar')}</legend>
-        <div className="segmented">
-          {[20, 15, 10].map((kg) => (
-            <button key={kg} type="button" className={state.settings.barKg === kg ? 'is-on' : ''}
-              onClick={() => dispatch({ type: 'settings/update', patch: { barKg: kg } })}>
-              {kg} kg
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      <CloudSettings />
     </>
   );
 }

@@ -4,6 +4,7 @@ import TrainingView from './views/TrainingView.jsx';
 import PlansView from './views/PlansView.jsx';
 import ExercisesView from './views/ExercisesView.jsx';
 import HistoryView from './views/HistoryView.jsx';
+import SettingsView from './views/SettingsView.jsx';
 import { Icon } from './components/Icon.jsx';
 import { useI18n } from './i18n/index.jsx';
 
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'plans', label: 'tab.plans', icon: 'list', View: PlansView },
   { id: 'exercises', label: 'tab.exercises', icon: 'book', View: ExercisesView },
   { id: 'history', label: 'tab.history', icon: 'chart', View: HistoryView },
+  { id: 'settings', label: 'tab.settings', icon: 'settings', View: SettingsView },
 ];
 
 export default function App() {

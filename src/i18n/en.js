@@ -8,6 +8,7 @@ export default {
     'tab.plans': 'Plans',
     'tab.exercises': 'Exercises',
     'tab.history': 'History',
+    'tab.settings': 'Settings',
     'tab.nav': 'Main navigation',
     'tab.running': 'Workout in progress',
 
@@ -105,7 +106,6 @@ export default {
     // History
     'history.workouts': 'Workouts',
     'history.progress': 'Progress',
-    'history.settings': 'Settings',
     'history.empty': 'No finished workouts yet. Start your first one under “Workout” – it will show up here afterwards.',
     'history.sets': ({ n }) => (n === 1 ? '1 set' : `${n} sets`),
     'history.deletedExercise': 'Deleted exercise',
@@ -125,7 +125,9 @@ export default {
 
     // Settings
     'settings.language': 'Language',
-    'settings.languageAuto': 'Automatic, based on device language ({lang}).',
+    'settings.languageAutoOption': 'Automatic',
+    'settings.languageAuto': 'Follows your device language (currently {lang}).',
+    'settings.languageFixed': 'Applies regardless of your device language.',
     'settings.rest': 'Rest time after a set',
     'settings.bar': 'Barbell weight (for the plate display)',
 
@@ -167,7 +169,7 @@ export default {
     'backup.invalid': 'This file is not a Kraftbuch backup. Choose a .json file you saved here.',
     'banner.backup': 'New data since your last iCloud backup ({ago}).',
     'banner.backupNow': 'Back up now',
-    'banner.conflict': 'Google Drive: please choose which data to keep under History → Settings.',
+    'banner.conflict': 'Google Drive: please choose which data to keep under Settings.',
     'banner.auth': 'Google Drive is waiting for you to sign in.',
     'banner.sync': 'Sync',
     'ago.never': 'never',

@@ -1,7 +1,7 @@
 # Kraftbuch
 
 Trainingstagebuch für Kraftsport als **Progressive Web App** (React + Vite).
-Auf Deutsch und Englisch (umschaltbar unter *Verlauf → Einstellungen → Sprache*, sonst nach Gerätesprache).
+Auf Deutsch und Englisch (umschaltbar unter *Einstellungen → Sprache*, sonst nach Gerätesprache).
 Läuft im Browser auf iOS und Android, lässt sich auf den Homescreen legen und funktioniert danach auch offline.
 
 ## Funktionen
@@ -14,7 +14,7 @@ Läuft im Browser auf iOS und Android, lässt sich auf den Homescreen legen und 
 - **Verlauf** – abgeschlossene Trainings, Fortschrittsdiagramm pro Übung (geschätztes 1RM nach Epley),
   Einstellungen und Speicherort.
 
-Die Daten liegen auf dem Gerät (`localStorage`). Unter *Verlauf → Einstellungen → Speicherort* lässt sich zusätzlich wählen:
+Die Daten liegen auf dem Gerät (`localStorage`). Unter *Einstellungen → Speicherort* lässt sich zusätzlich wählen:
 
 - **Google Drive** – automatischer Abgleich über die Datei `Kraftbuch-Daten.json` im eigenen Drive.
   Funktioniert auf allen Geräten, auf denen man sich mit demselben Google-Konto anmeldet.
