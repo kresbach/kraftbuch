@@ -19,6 +19,7 @@
   --radius: 14px;
   --radius-sm: 10px;
   --tabbar-h: 64px;
+  --content-w: 640px; /* Breite von Inhalt und Tab-Leiste auf großen Bildschirmen */
   --safe-b: env(safe-area-inset-bottom, 0px);
   color-scheme: light;
 }
@@ -78,7 +79,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 /* ---------- Gerüst ---------- */
 .app { min-height: 100dvh; }
 .content {
-  max-width: 640px;
+  max-width: var(--content-w);
   margin: 0 auto;
   padding-inline: 16px;
   padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
@@ -103,7 +104,9 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   inset: auto 0 0 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* Tabs teilen sich höchstens die Inhaltsbreite und bleiben mittig, statt sich über den Bildschirm zu verteilen */
+  grid-template-columns: repeat(5, minmax(0, calc(var(--content-w) / 5)));
+  justify-content: center;
   padding-bottom: var(--safe-b);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(12px);
