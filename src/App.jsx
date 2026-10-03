@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from './state/store.jsx';
 import TrainingView from './views/TrainingView.jsx';
 import PlansView from './views/PlansView.jsx';
@@ -21,6 +21,7 @@ export default function App() {
   const { state } = useStore();
   const { t } = useI18n();
   const { View, wide } = TABS.find((x) => x.id === tab);
+  useHideTabbarWhileTyping();
 
   return (
     <div className="app">
@@ -45,4 +46,25 @@ export default function App() {
       </nav>
     </div>
   );
+}
+
+// iOS schiebt unten angeheftete Leisten über die Bildschirmtastatur. Wie in nativen Apps wird die
+// Tab-Leiste deshalb ausgeblendet, solange auf einem Touch-Gerät in ein Textfeld getippt wird.
+const NO_KEYBOARD = ['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'range', 'color'];
+const opensKeyboard = (el) =>
+  el?.tagName === 'TEXTAREA' || (el?.tagName === 'INPUT' && !NO_KEYBOARD.includes(el.type)) || el?.isContentEditable;
+
+function useHideTabbarWhileTyping() {
+  useEffect(() => {
+    if (!matchMedia('(pointer: coarse)').matches) return;
+    const update = () => document.body.classList.toggle('keyboard-open', opensKeyboard(document.activeElement));
+    const onFocusOut = () => setTimeout(update, 50); // Fokuswechsel zwischen Feldern abwarten
+    document.addEventListener('focusin', update);
+    document.addEventListener('focusout', onFocusOut);
+    return () => {
+      document.removeEventListener('focusin', update);
+      document.removeEventListener('focusout', onFocusOut);
+      document.body.classList.remove('keyboard-open');
+    };
+  }, []);
 }

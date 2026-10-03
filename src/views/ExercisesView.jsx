@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { EQUIPMENT, MUSCLE_GROUPS } from '../data/exercises.js';
 import { EquipmentFilter, matchesQuery } from '../components/ExercisePicker.jsx';
 import { useStore } from '../state/store.jsx';
@@ -15,6 +15,16 @@ export default function ExercisesView() {
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
   const [equipment, setEquipment] = useState(null);
+  const searchBar = useRef(null);
+
+  // Suchleiste an den oberen Rand holen, damit die Treffer über der Tastatur sichtbar sind
+  const pinSearchBar = () => {
+    const el = searchBar.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).top) || 0);
+    if (Math.abs(window.scrollY - top) > 2) window.scrollTo({ top, behavior: 'smooth' });
+  };
+  useEffect(() => { if (query) pinSearchBar(); }, [query]);
 
   // Bestwerte je Übung aus dem Verlauf
   const bests = useMemo(() => {
@@ -38,16 +48,21 @@ export default function ExercisesView() {
         <h1>{t('exercises.title')}</h1>
       </header>
 
-      <div className="toolbar">
-        <label className="search">
-          <Icon name="search" size={18} />
-          <input id="exercise-search" type="search" placeholder={t('exercise.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
-        </label>
-        <button className="btn btn-primary" onClick={() => setAdding(true)}><Icon name="plus" size={18} /> {t('exercises.custom')}</button>
+      <div className="search-sticky" ref={searchBar}>
+        <div className="toolbar">
+          <label className="search">
+            <Icon name="search" size={18} />
+            <input id="exercise-search" type="search" enterKeyHint="search" placeholder={t('exercise.search')} value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setTimeout(pinSearchBar, 350) /* nach dem Einblenden der Tastatur */}
+              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
+          </label>
+          <button className="btn btn-primary" onClick={() => setAdding(true)}><Icon name="plus" size={18} /> {t('exercises.custom')}</button>
+        </div>
+        <EquipmentFilter value={equipment} onChange={setEquipment} />
       </div>
-      <EquipmentFilter value={equipment} onChange={setEquipment} />
 
-      <div className="groups">
+      <div className={`groups ${query ? 'is-searching' : ''}`}>
       {MUSCLE_GROUPS.map((group) => {
         const list = all.filter((e) => e.group === group).sort((a, b) => i18n.compare(exName(a), exName(b)));
         if (list.length === 0) return null;

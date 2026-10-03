@@ -176,6 +176,24 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 }
 .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--fg); font-size: 16px; }
 .toolbar { display: flex; gap: 8px; }
+/* Suchleiste + Gerätefilter haften beim Scrollen oben */
+.search-sticky {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 6;
+  display: flex; flex-direction: column; gap: 12px;
+  margin-inline: -16px; padding: 8px 16px 10px;
+  background: var(--bg);
+}
+/* Gerätefilter in der Leiste als eine wischbare Zeile – lässt über der Tastatur Platz für Treffer */
+.search-sticky .chips {
+  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+  margin-inline: -16px; padding-inline: 16px; scroll-padding-inline: 16px;
+}
+.search-sticky .chips::-webkit-scrollbar { display: none; }
+.search-sticky .chip, .search-sticky .chips-label { flex: none; }
+/* Beim Suchen genug Höhe, damit die Suchleiste ganz nach oben rutschen kann */
+.groups.is-searching { min-height: 100dvh; }
+/* Tastatur offen: Tab-Leiste ausblenden, statt sie über der Tastatur schweben zu lassen */
+body.keyboard-open .tabbar { display: none; }
 
 .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .chips-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-right: 2px; }
@@ -426,6 +444,11 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 /* Tablet */
 @media (min-width: 768px) {
   .content { padding-inline: 24px; }
+  .search-sticky { margin-inline: -24px; padding-inline: 24px; }
+  .search-sticky .chips { margin-inline: -24px; padding-inline: 24px; }
+}
+@media (min-width: 1024px) {
+  .search-sticky .chips { flex-wrap: wrap; overflow: visible; }
   .cards-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 
