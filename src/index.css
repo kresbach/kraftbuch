@@ -184,12 +184,12 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   background: var(--bg);
 }
 /* Gerätefilter in der Leiste als eine wischbare Zeile – lässt über der Tastatur Platz für Treffer */
-.search-sticky .chips {
+.search-sticky .chips, .picker-top .chips {
   flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
   margin-inline: -16px; padding-inline: 16px; scroll-padding-inline: 16px;
 }
-.search-sticky .chips::-webkit-scrollbar { display: none; }
-.search-sticky .chip, .search-sticky .chips-label { flex: none; }
+.search-sticky .chips::-webkit-scrollbar, .picker-top .chips::-webkit-scrollbar { display: none; }
+.search-sticky .chip, .search-sticky .chips-label, .picker-top .chip, .picker-top .chips-label { flex: none; }
 /* Beim Suchen genug Höhe, damit die Suchleiste ganz nach oben rutschen kann */
 .groups.is-searching { min-height: 100dvh; }
 /* Tastatur offen: Tab-Leiste ausblenden, statt sie über der Tastatur schweben zu lassen */
@@ -400,10 +400,27 @@ body.keyboard-open .tabbar { display: none; }
   padding: 0 16px; border: 0; background: none; text-align: left;
 }
 .empty-line { padding: 16px; }
+/* Übungsauswahl: volle Höhe, Suche + Filter haften oben, Treffer scrollen darunter */
+.sheet.is-tall { height: calc(100% - max(env(safe-area-inset-top, 0px), 12px) - 8px); max-height: none; }
+.sheet.is-tall .sheet-body { flex: 1; padding-top: 0; }
+.picker-top {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; flex-direction: column; gap: 10px;
+  margin-inline: -16px; padding: 4px 16px 10px;
+  background: var(--bg);
+}
+/* Tastatur offen: kompakter, damit möglichst viele Treffer sichtbar bleiben */
+.has-keyboard .sheet { padding-bottom: 0; }
+.has-keyboard .sheet.is-tall { height: calc(100% - 8px); }
+.has-keyboard .sheet-head { padding-block: 8px 4px; }
+.has-keyboard .sheet-head h2 { font-size: 17px; }
+/* Beim Tippen sind die Filter verzichtbar – die Suche findet auch Gerät und Muskelgruppe */
+.has-keyboard .picker-top .chips { display: none; }
 
 @media (min-width: 700px) {
   .sheet-backdrop { align-items: center; }
   .sheet { border-radius: 20px; }
+  .sheet.is-tall { height: min(760px, 88dvh); }
 }
 
 @keyframes fade { from { opacity: 0; } }
