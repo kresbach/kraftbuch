@@ -13,11 +13,20 @@ export function estimate1RM(kg, reps) {
 /** Zahl aus einer Eingabe lesen; akzeptiert Komma als Dezimaltrennzeichen. */
 export const parseNum = (v) => Number(String(v ?? '').replace(',', '.')) || 0;
 
+/** Eingabe fürs Gewicht: nur positive Zahlen bis 9999 mit höchstens 2 Nachkommastellen.
+ *  Liefert den bereinigten Wert oder null (= Eingabe ignorieren). */
+export const cleanKg = (v) => (/^\d{0,4}([.,]\d{0,2})?$/.test(v) ? v : null);
+/** Eingabe für Wiederholungen bzw. Sekunden: nur ganze Zahlen bis 9999. */
+export const cleanReps = (v) => (/^\d{0,4}$/.test(v) ? v : null);
+
 /** Bewegtes Gewicht eines Satzes (kg × Wdh). */
 export const setVolume = (s) => parseNum(s.kg) * parseNum(s.reps);
 
 /** Bewegtes Gewicht einer Übung im Training (nur erledigte Sätze). */
-export const exerciseVolume = (ex) => ex.sets.filter((s) => s.done).reduce((a, s) => a + setVolume(s), 0);
+// Bei Zeitübungen (Sekunden statt Wdh) ergibt kg × Wdh kein bewegtes Gewicht
+const TIMED_IDS = new Set(['plank', 'side-plank']);
+export const exerciseVolume = (ex) => (TIMED_IDS.has(ex.exerciseId) ? 0
+  : ex.sets.filter((s) => s.done).reduce((a, s) => a + Math.max(0, setVolume(s)), 0));
 
 export const workoutVolume = (w) => w.exercises.reduce((sum, ex) => sum + exerciseVolume(ex), 0);
 

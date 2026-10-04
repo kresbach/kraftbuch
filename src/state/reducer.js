@@ -152,7 +152,7 @@ export function reducer(state, action) {
         .map((ex) => ({
           ...ex,
           sets: ex.sets
-            .filter((s) => s.done)
+            .filter((s) => s.done && parseNum(s.reps) > 0)
             .map((s) => ({ kg: parseNum(s.kg), reps: parseNum(s.reps), done: true })),
         }))
         .filter((ex) => ex.sets.length > 0);

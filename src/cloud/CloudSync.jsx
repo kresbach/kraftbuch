@@ -57,6 +57,9 @@ export function CloudSyncProvider({ children }) {
 
   // ---- Google Drive ----
 
+  const conflictOpen = useRef(false);
+  conflictOpen.current = !!conflict;
+
   const runGoogleSync = useCallback(async () => {
     if (running.current) return;
     const token = validToken();
@@ -147,6 +150,7 @@ export function CloudSyncProvider({ children }) {
     loadGis().catch(() => {});
     // Ohne gültige Freigabe nicht stillschweigend aussetzen, sondern den Hinweis zum Anmelden zeigen
     const syncIfPossible = () => {
+      if (conflictOpen.current) return; // erst entscheiden lassen, welche Daten gelten
       if (validToken()) runGoogleSync();
       else if (metaRef.current.fileId) setStatus((st) => (st.phase === 'needs_auth' ? st : { phase: 'needs_auth', msg: 'cloud.authExpired' }));
     };
@@ -170,7 +174,7 @@ export function CloudSyncProvider({ children }) {
   }, [isGoogle, runGoogleSync]);
 
   useEffect(() => {
-    if (!isGoogle || state.updatedAt <= metaRef.current.lastSyncedAt) return;
+    if (!isGoogle || conflictOpen.current || state.updatedAt <= metaRef.current.lastSyncedAt) return;
     if (!validToken()) {
       if (metaRef.current.fileId) setStatus({ phase: 'needs_auth', msg: 'cloud.authExpired' });
       return;

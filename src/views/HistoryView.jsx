@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon.jsx';
 import { ProgressChart } from '../components/ProgressChart.jsx';
 import { Sheet } from '../components/Sheet.jsx';
 import { useUndo } from '../components/Undo.jsx';
-import { estimate1RM, exerciseVolume, fmtDate, fmtDuration, fmtNum, fmtWeight, parseNum, workoutVolume } from '../utils/training.js';
+import { cleanKg, cleanReps, estimate1RM, exerciseVolume, fmtDate, fmtDuration, fmtNum, fmtWeight, parseNum, workoutVolume } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 
 const SECTIONS = [
@@ -165,9 +165,9 @@ function WorkoutEditor({ workout, onClose }) {
                   <div key={j} className="set-row" role="row">
                     <span className="set-no num" role="cell">{j + 1}</span>
                     <input id={`h-${i}-${j}-kg`} className="num-input" role="cell" inputMode="decimal" placeholder="–" value={s.kg}
-                      aria-label={t('workout.ariaWeight', { n: j + 1 })} onChange={(e) => setField(i, j, 'kg', e.target.value)} />
+                      aria-label={t('workout.ariaWeight', { n: j + 1 })} onChange={(e) => { const v = cleanKg(e.target.value); if (v != null) setField(i, j, 'kg', v); }} />
                     <input id={`h-${i}-${j}-reps`} className="num-input" role="cell" inputMode="numeric" placeholder="–" value={s.reps}
-                      aria-label={t(info?.timed ? 'workout.ariaSeconds' : 'workout.ariaReps', { n: j + 1 })} onChange={(e) => setField(i, j, 'reps', e.target.value)} />
+                      aria-label={t(info?.timed ? 'workout.ariaSeconds' : 'workout.ariaReps', { n: j + 1 })} onChange={(e) => { const v = cleanReps(e.target.value); if (v != null) setField(i, j, 'reps', v); }} />
                     <button type="button" role="cell" className="icon-btn danger set-remove" aria-label={t('history.removeSet')} onClick={() => removeSet(i, j)}>
                       <Icon name="close" size={18} />
                     </button>
@@ -206,6 +206,7 @@ function Progress() {
 
   const info = exercises.get(exerciseId);
   const isBodyweight = info.type === 'bodyweight';
+  const timed = !!info.timed;
   const sessions = state.workouts
     .map((w) => ({ date: w.startedAt, sets: w.exercises.find((e) => e.exerciseId === exerciseId)?.sets ?? [] }))
     .filter((s) => s.sets.length)
@@ -236,10 +237,10 @@ function Progress() {
       <section className="stats">
         <div className="stat">
           <span className="stat-value num">{fmtNum(best)}</span>
-          <span className="stat-label">{t(isBodyweight ? 'progress.mostReps' : 'progress.best1rm')}</span>
+          <span className="stat-label">{t(timed ? 'progress.longest' : isBodyweight ? 'progress.mostReps' : 'progress.best1rm')}</span>
         </div>
         <div className="stat">
-          <span className="stat-value num">{heaviest.kg ? `${fmtNum(heaviest.kg)}×${heaviest.reps}` : heaviest.reps}</span>
+          <span className="stat-value num">{heaviest.kg ? `${fmtNum(heaviest.kg)}×${heaviest.reps}` : heaviest.reps}{timed ? ' s' : ''}</span>
           <span className="stat-label">{t(isBodyweight ? 'progress.bestSet' : 'progress.heaviestSet')}</span>
         </div>
         <div className="stat">
@@ -250,8 +251,8 @@ function Progress() {
       </div>
 
       <div className="card chart-card">
-        <h3 className="small muted">{t(isBodyweight ? 'progress.chartReps' : 'progress.chart1rm')}</h3>
-        <ProgressChart points={points} unit={isBodyweight ? t('workout.reps') : 'kg'} />
+        <h3 className="small muted">{t(timed ? 'progress.chartSeconds' : isBodyweight ? 'progress.chartReps' : 'progress.chart1rm')}</h3>
+        <ProgressChart points={points} unit={timed ? 's' : isBodyweight ? t('workout.reps') : 'kg'} />
       </div>
       </div>
     </>

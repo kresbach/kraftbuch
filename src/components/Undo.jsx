@@ -20,6 +20,15 @@ export function UndoProvider({ children }) {
     setToast({ message, snapshot, id: Date.now() });
   }, [dispatch]);
 
+  // Ändern sich die betroffenen Daten danach noch auf anderem Weg (z. B. Training abgeschlossen,
+  // Cloud-Abgleich), würde „Rückgängig“ diese Änderung überschreiben – dann den Hinweis entfernen.
+  useEffect(() => {
+    if (!toast) return;
+    const keys = Object.keys(toast.snapshot);
+    if (!toast.after) toast.after = Object.fromEntries(keys.map((k) => [k, state[k]]));
+    else if (keys.some((k) => state[k] !== toast.after[k])) setToast(null);
+  }, [state, toast]);
+
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), SHOW_MS);

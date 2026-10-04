@@ -363,6 +363,14 @@ body.keyboard-open .toast { bottom: calc(var(--safe-b) + 10px); }
 .rest-time { font-size: 20px; font-weight: 800; }
 .rest .btn { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--bg) 35%, transparent); }
 .rest.is-over { background: var(--good); color: var(--good-fg); }
+.rest .btn { white-space: nowrap; }
+@media (max-width: 360px) {
+  .rest { gap: 6px; padding-left: 10px; }
+  .rest-label { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rest > svg { display: none; }
+  .rest .btn { padding-inline: 8px; }
+  .tab { font-size: 10px; letter-spacing: -0.02em; }
+}
 
 /* ---------- Umsortieren per Drag & Drop ---------- */
 .drag-handle {

@@ -1,6 +1,6 @@
 // Schnelltest: node src/utils/training.test.mjs
 import assert from 'node:assert/strict';
-import { estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
+import { cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
 
 assert.equal(estimate1RM(100, 1), 100);
 assert.equal(Math.round(estimate1RM(100, 5)), 117);
@@ -21,4 +21,10 @@ assert.equal(fmtWeight(12480), '12,5 t');
 assert.equal(fmtDuration(30000), '< 1 min');
 assert.equal(fmtDuration(42 * 60000), '42 min');
 assert.equal(workoutVolume({ exercises: [{ sets: [{ kg: '60', reps: '8', done: true }, { kg: 60, reps: 8, done: false }] }, { sets: [{ kg: '2,5', reps: 10, done: true }] }] }), 505);
+assert.equal(cleanKg('-5'), null);
+assert.equal(cleanKg('62,5'), '62,5');
+assert.equal(cleanKg('100000'), null);
+assert.equal(cleanReps('8,5'), null);
+assert.equal(cleanReps('12'), '12');
+assert.equal(workoutVolume({ exercises: [{ exerciseId: 'plank', sets: [{ kg: 10, reps: 60, done: true }] }] }), 0);
 console.log('training.js: alle Tests bestanden');

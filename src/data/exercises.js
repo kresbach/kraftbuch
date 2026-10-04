@@ -8,7 +8,7 @@
 export const MUSCLE_GROUPS = ['Beine', 'Brust', 'Rücken', 'Schultern', 'Arme', 'Rumpf'];
 export const EQUIPMENT = ['Maschine', 'Kabelzug', 'Langhantel', 'Kurzhantel', 'Kettlebell', 'Körpergewicht'];
 
-const TIMED = new Set(['plank', 'side-plank']);
+const TIMED = new Set(['plank', 'side-plank']); // auch in utils/training.js (Volumen)
 
 const ex = (id, name, en, group, equipment) => ({
   id,

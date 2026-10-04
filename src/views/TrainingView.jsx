@@ -8,7 +8,7 @@ import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
 import { CloudBanner } from '../components/CloudSettings.jsx';
 import { DragHandle, useSortable } from '../components/Sortable.jsx';
-import { exerciseVolume, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeight, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
+import { cleanKg, cleanReps, exerciseVolume, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeight, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
 import { unlockSound } from '../utils/sound.js';
 import { useUndo } from '../components/Undo.jsx';
 import { useI18n } from '../i18n/index.jsx';
@@ -107,7 +107,14 @@ function ActiveWorkout() {
 
   const moved = workoutVolume(w);
 
+  useWakeLock(); // Bildschirm bleibt während des Trainings an
+
   function toggleDone(exIndex, setIndex, set) {
+    // Ohne Wiederholungen ist der Satz nicht auswertbar: stattdessen ins Wdh-Feld springen
+    if (!set.done && !(parseNum(set.reps) > 0)) {
+      document.getElementById(`w-${exIndex}-${setIndex}-reps`)?.focus();
+      return;
+    }
     if (!set.done && state.settings.restSound !== false) unlockSound(); // Ton am Pausenende erlauben (iOS)
     dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { done: !set.done } });
     if (!set.done) setRestEnd(Date.now() + state.settings.restSeconds * 1000);
@@ -206,10 +213,10 @@ function ActiveWorkout() {
                     <span className="set-no num" role="cell">{setIndex + 1}</span>
                     <input id={`w-${exIndex}-${setIndex}-kg`} className="num-input" role="cell" inputMode="decimal"
                       placeholder={isBodyweight ? '0' : '–'} value={set.kg} aria-label={t('workout.ariaWeight', { n: setIndex + 1 })}
-                      onChange={(e) => dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { kg: e.target.value } })} />
+                      onChange={(e) => { const kg = cleanKg(e.target.value); if (kg != null) dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { kg } }); }} />
                     <input id={`w-${exIndex}-${setIndex}-reps`} className="num-input" role="cell" inputMode="numeric"
                       placeholder="–" value={set.reps} aria-label={t(info?.timed ? 'workout.ariaSeconds' : 'workout.ariaReps', { n: setIndex + 1 })}
-                      onChange={(e) => dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { reps: e.target.value } })} />
+                      onChange={(e) => { const reps = cleanReps(e.target.value); if (reps != null) dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { reps } }); }} />
                     <button role="cell" className={`check ${set.done ? 'is-on' : ''}`} aria-pressed={set.done}
                       aria-label={t('workout.ariaDone', { n: setIndex + 1 })} onClick={() => toggleDone(exIndex, setIndex, set)}>
                       <Icon name="check" size={20} />
@@ -274,6 +281,33 @@ function LastWorkout({ workout: w, onOpen }) {
       </button>
     </section>
   );
+}
+
+/** Hält den Bildschirm an, solange ein Training läuft (sonst sperrt sich das Handy in der Pause).
+ *  Der Browser gibt die Sperre beim Wechsel in den Hintergrund frei – beim Zurückkehren neu anfordern. */
+function useWakeLock() {
+  useEffect(() => {
+    if (!navigator.wakeLock) return;
+    let lock = null;
+    let active = true;
+    const request = () => {
+      if (document.visibilityState !== 'visible' || lock) return;
+      navigator.wakeLock.request('screen')
+        .then((l) => {
+          if (!active) return l.release();
+          lock = l;
+          l.addEventListener('release', () => { lock = null; });
+        })
+        .catch(() => {}); // z. B. Energiesparmodus – dann eben ohne
+    };
+    request();
+    document.addEventListener('visibilitychange', request);
+    return () => {
+      active = false;
+      document.removeEventListener('visibilitychange', request);
+      lock?.release().catch(() => {});
+    };
+  }, []);
 }
 
 /** Trainingsuhr als eigene Komponente: Nur sie wird jede Sekunde neu gezeichnet, nicht das ganze Training. */
