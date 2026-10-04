@@ -1,0 +1,34 @@
+// Schnelltest: node src/state/reducer.test.mjs
+import assert from 'node:assert/strict';
+import { initialState, reducer } from './reducer.js';
+
+const start = reducer({ ...initialState, plans: [] }, { type: 'workout/start', planId: null });
+let s = reducer(start, { type: 'workout/addExercise', exerciseId: 'kniebeuge' }); // neue Übung: 3 leere Sätze
+const type = (state, setIndex, key, text) => {
+  // Zeichen für Zeichen tippen wie auf dem Handy
+  for (let n = 1; n <= text.length; n++) state = reducer(state, { type: 'workout/updateSet', exIndex: 0, setIndex, patch: { [key]: text.slice(0, n) } });
+  return state;
+};
+const sets = (state) => state.activeWorkout.exercises[0].sets.map((x) => `${x.kg}x${x.reps}`).join(' ');
+
+s = type(s, 0, 'kg', '80');
+s = type(s, 0, 'reps', '10');
+assert.equal(sets(s), '80x10 80x10 80x10');
+
+// Satz 2 bekommt einen eigenen Wert → Änderungen an Satz 1 lassen Satz 2 und 3 in Ruhe
+s = type(s, 1, 'reps', '8');
+assert.equal(sets(s), '80x10 80x8 80x8');
+s = reducer(s, { type: 'workout/updateSet', exIndex: 0, setIndex: 0, patch: { reps: '12' } });
+assert.equal(sets(s), '80x12 80x8 80x8');
+
+// Abgehakte Sätze bleiben unverändert
+s = reducer(s, { type: 'workout/updateSet', exIndex: 0, setIndex: 1, patch: { done: true } });
+s = reducer(s, { type: 'workout/updateSet', exIndex: 0, setIndex: 0, patch: { kg: '90' } });
+assert.equal(sets(s), '90x12 80x8 80x8');
+
+// Löschen im ersten Satz leert die folgenden, die denselben Wert hatten
+let t = type(reducer(start, { type: 'workout/addExercise', exerciseId: 'kniebeuge' }), 0, 'kg', '60');
+t = reducer(t, { type: 'workout/updateSet', exIndex: 0, setIndex: 0, patch: { kg: '' } });
+assert.equal(sets(t), 'x x x');
+
+console.log('reducer.js: alle Tests bestanden');

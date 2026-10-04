@@ -141,15 +141,21 @@ export function reducer(state, action) {
         return { ...ex, sets: [...ex.sets, { kg: prev?.kg ?? '', reps: prev?.reps ?? '', done: false }] };
       });
     case 'workout/updateSet':
-      // Ein eingetragenes Gewicht wird in die folgenden, noch leeren Sätze übernommen.
-      return updateWorkoutExercise(state, action.exIndex, (ex) => ({
-        ...ex,
-        sets: ex.sets.map((s, i) => {
-          if (i === action.setIndex) return { ...s, ...action.patch };
-          if (i > action.setIndex && 'kg' in action.patch && s.kg === '' && !s.done) return { ...s, kg: action.patch.kg };
-          return s;
-        }),
-      }));
+      // Gewicht und Wiederholungen wandern in die folgenden, noch offenen Sätze, solange diese noch
+      // leer sind oder den bisherigen Wert haben – so wird beim Tippen von „80“ nicht nur die „8“ übernommen.
+      return updateWorkoutExercise(state, action.exIndex, (ex) => {
+        const sets = ex.sets.map((s, i) => (i === action.setIndex ? { ...s, ...action.patch } : s));
+        for (const key of ['kg', 'reps']) {
+          if (!(key in action.patch)) continue;
+          const before = String(ex.sets[action.setIndex][key] ?? '');
+          for (let i = action.setIndex + 1; i < sets.length; i++) {
+            const value = String(sets[i][key] ?? '');
+            if (sets[i].done || (value !== '' && value !== before)) break; // eigener Wert: ab hier nichts ändern
+            sets[i] = { ...sets[i], [key]: action.patch[key] };
+          }
+        }
+        return { ...ex, sets };
+      });
     case 'workout/removeSet':
       return updateWorkoutExercise(state, action.exIndex, (ex) => ({
         ...ex,
