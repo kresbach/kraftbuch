@@ -157,7 +157,7 @@ export default {
     'cloud.saveFile': 'Als Datei sichern',
     'cloud.loadFile': 'Sicherung laden',
     'cloud.googleMissing': 'Google Drive ist für diese Installation noch nicht eingerichtet: Es fehlt die Google-Client-ID. Die Schritte stehen in der README unter „Google Drive einrichten“.',
-    'cloud.googleText': 'Deine Daten werden automatisch als Datei Kraftbuch-Daten.json in deinem Google Drive gespeichert und mit allen Geräten abgeglichen, auf denen du dich anmeldest. Die App sieht nur diese eine Datei.',
+    'cloud.googleText': 'Deine Daten werden automatisch als Datei Kraftbuch-Daten.json in deinem Google Drive gespeichert und mit allen Geräten abgeglichen, auf denen du dich anmeldest – beim Öffnen, jede Minute, nach jeder Änderung und beim Schließen der App. Google erlaubt die Anmeldung jeweils für etwa eine Stunde; danach wird sie beim nächsten Tippen in der App erneuert. Die App sieht nur diese eine Datei.',
     'cloud.conflictTitle': 'Welche Daten sollen gelten?',
     'cloud.conflictDetail': 'Google Drive: {workouts} Trainings, {plans} Pläne. Die andere Version wird überschrieben.',
     'cloud.keepCloud': 'Google-Drive-Daten laden',

@@ -4,12 +4,15 @@ import { useStore } from '../state/store.jsx';
 import { isBackup, syncedData } from '../state/reducer.js';
 import { decideSync } from './syncLogic.js';
 import { saveFile } from '../utils/saveFile.js';
-import { AuthRequired, DriveError, GOOGLE_CLIENT_ID, downloadFile, findFile, signIn, uploadFile } from './googleDrive.js';
+import { AuthRequired, DriveError, GOOGLE_CLIENT_ID, downloadFile, findFile, loadGis, setKeepalive, signIn, uploadFile } from './googleDrive.js';
 
 const META_KEY = 'kraftbuch:sync';
 const EMPTY_META = { provider: 'off', lastSyncedAt: 0, remoteVersion: null, fileId: null, token: null, tokenExpiresAt: 0 };
 const BACKUP_REMINDER_MS = 24 * 60 * 60 * 1000;
 const IDLE = { phase: 'idle', msg: '' };
+const POLL_MS = 60 * 1000; // bei geöffneter App regelmäßig nach Änderungen anderer Geräte sehen
+const CHANGE_DELAY_MS = 2000; // nach einer Änderung kurz warten, dann hochladen
+const RENEW_RETRY_MS = 10 * 60 * 1000; // abgelehnte/blockierte stille Neuanmeldung nicht dauernd wiederholen
 // Meldungen sind Übersetzungsschlüssel (msg) mit Werten (vars); die Oberfläche übersetzt sie.
 
 function loadMeta() {
@@ -33,6 +36,8 @@ export function CloudSyncProvider({ children }) {
   const metaRef = useRef(meta);
   stateRef.current = state;
   const running = useRef(false);
+  const signingIn = useRef(false);
+  const lastRenewAttempt = useRef(0);
 
   const setMeta = useCallback((patch) => {
     const next = { ...metaRef.current, ...patch };
@@ -103,6 +108,8 @@ export function CloudSyncProvider({ children }) {
   /** Aus einem Tippen heraus: bei Bedarf anmelden, dann abgleichen. */
   const syncNow = useCallback(async () => {
     if (!validToken()) {
+      if (signingIn.current) return;
+      signingIn.current = true;
       try {
         const firstTime = !metaRef.current.fileId && !metaRef.current.lastSyncedAt;
         const { token, expiresAt } = await signIn({ firstTime });
@@ -110,6 +117,8 @@ export function CloudSyncProvider({ children }) {
       } catch (e) {
         setStatus({ phase: 'needs_auth', ...errorStatus(e) });
         return;
+      } finally {
+        signingIn.current = false;
       }
     }
     await runGoogleSync();
@@ -130,26 +139,68 @@ export function CloudSyncProvider({ children }) {
     }
   }, [conflict, dispatch, runGoogleSync, setMeta]);
 
-  // Automatischer Abgleich: beim Öffnen, beim Zurückkehren in die App und kurz nach Änderungen
+  // Automatischer Abgleich: beim Öffnen, beim Zurückkehren in die App, jede Minute solange die App offen
+  // ist, kurz nach jeder Änderung und sofort beim Verlassen der App (damit nichts auf dem Gerät hängt).
   const isGoogle = meta.provider === 'google';
   useEffect(() => {
     if (!isGoogle) return;
-    if (validToken()) runGoogleSync();
-    const onVisible = () => document.visibilityState === 'visible' && validToken() && runGoogleSync();
-    const onOnline = () => validToken() && runGoogleSync();
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('online', onOnline);
+    loadGis().catch(() => {});
+    // Ohne gültige Freigabe nicht stillschweigend aussetzen, sondern den Hinweis zum Anmelden zeigen
+    const syncIfPossible = () => {
+      if (validToken()) runGoogleSync();
+      else if (metaRef.current.fileId) setStatus((st) => (st.phase === 'needs_auth' ? st : { phase: 'needs_auth', msg: 'cloud.authExpired' }));
+    };
+    syncIfPossible();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') return syncIfPossible();
+      // App geht in den Hintergrund: offene Änderungen sofort hochladen
+      if (stateRef.current.updatedAt > metaRef.current.lastSyncedAt && validToken()) {
+        setKeepalive(true);
+        runGoogleSync().finally(() => setKeepalive(false));
+      }
+    };
+    const poll = setInterval(() => document.visibilityState === 'visible' && syncIfPossible(), POLL_MS);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('online', syncIfPossible);
     return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('online', onOnline);
+      clearInterval(poll);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('online', syncIfPossible);
     };
   }, [isGoogle, runGoogleSync]);
 
   useEffect(() => {
-    if (!isGoogle || !validToken() || state.updatedAt <= metaRef.current.lastSyncedAt) return;
-    const t = setTimeout(runGoogleSync, 3000);
+    if (!isGoogle || state.updatedAt <= metaRef.current.lastSyncedAt) return;
+    if (!validToken()) {
+      if (metaRef.current.fileId) setStatus({ phase: 'needs_auth', msg: 'cloud.authExpired' });
+      return;
+    }
+    const t = setTimeout(runGoogleSync, CHANGE_DELAY_MS);
     return () => clearTimeout(t);
   }, [isGoogle, state.updatedAt, runGoogleSync]);
+
+  // Google gibt einer Web-App ohne eigenen Server nur eine Freigabe für rund eine Stunde. Ist sie
+  // abgelaufen, wird sie beim nächsten Tippen in der App still erneuert – das Google-Fenster schließt
+  // sich dabei normalerweise sofort wieder, weil die Zustimmung schon besteht. Ohne Tippen erlaubt der
+  // Browser kein Anmeldefenster.
+  const wasConnected = isGoogle && (!!meta.fileId || !!meta.lastSyncedAt);
+  useEffect(() => {
+    if (!wasConnected || !GOOGLE_CLIENT_ID) return;
+    const onTap = () => {
+      if (validToken() || signingIn.current || Date.now() - lastRenewAttempt.current < RENEW_RETRY_MS) return;
+      lastRenewAttempt.current = Date.now();
+      signingIn.current = true;
+      signIn({ firstTime: false })
+        .then(({ token, expiresAt }) => {
+          setMeta({ token, tokenExpiresAt: expiresAt });
+          runGoogleSync();
+        })
+        .catch(() => {}) // bleibt bei „Jetzt synchronisieren“
+        .finally(() => { signingIn.current = false; });
+    };
+    document.addEventListener('click', onTap, true);
+    return () => document.removeEventListener('click', onTap, true);
+  }, [wasConnected, runGoogleSync, setMeta]);
 
   // ---- Datei-Sicherung (iCloud Drive über „In Dateien sichern“) ----
 

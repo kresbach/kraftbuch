@@ -20,7 +20,9 @@ export class DriveError extends Error {
 }
 
 let gisPromise;
-function loadGis() {
+/** Google-Anmeldung vorab laden: Beim erneuten Anmelden nach einem Tippen darf nichts mehr nachgeladen
+ *  werden, sonst blockiert der Browser das Fenster (die „Nutzeraktion“ ist dann schon vorbei). */
+export function loadGis() {
   gisPromise ??= new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = 'https://accounts.google.com/gsi/client';
@@ -52,8 +54,12 @@ export async function signIn({ firstTime }) {
   });
 }
 
+// `keepalive`: Anfrage läuft weiter, auch wenn die App gerade in den Hintergrund geht
+let keepalive = false;
+export const setKeepalive = (on) => { keepalive = on; };
+
 async function api(token, url, init = {}) {
-  const res = await fetch(url, { ...init, headers: { ...init.headers, Authorization: `Bearer ${token}` } });
+  const res = await fetch(url, { ...init, keepalive: keepalive && (init.body?.length ?? 0) < 60_000, headers: { ...init.headers, Authorization: `Bearer ${token}` } });
   if (res.status === 401) throw new AuthRequired('auth');
   if (!res.ok) throw new DriveError('http', { status: res.status });
   return res;
