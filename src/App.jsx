@@ -7,6 +7,7 @@ import HistoryView from './views/HistoryView.jsx';
 import SettingsView from './views/SettingsView.jsx';
 import { Icon } from './components/Icon.jsx';
 import { useI18n } from './i18n/index.jsx';
+import { useBackClose } from './utils/useBackClose.js';
 
 const TABS = [
   { id: 'training', label: 'tab.training', icon: 'dumbbell', View: TrainingView, wide: true },
@@ -30,6 +31,7 @@ export default function App() {
   const { t } = useI18n();
   const { View, wide } = TABS.find((x) => x.id === tab);
   useHideTabbarWhileTyping();
+  useBackClose(() => setTab('training'), tab !== 'training'); // Zurück führt von jedem Tab zum Training
 
   return (
     <div className="app">

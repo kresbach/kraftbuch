@@ -109,7 +109,8 @@ export default function ExercisesView() {
 }
 
 function AddExercise({ initialName, onSave, onClose }) {
-  const { t, group: groupName, equip } = useI18n();
+  const { t, group: groupName, equip, exName } = useI18n();
+  const { exercises } = useStore();
   const [name, setName] = useState(initialName);
   const [group, setGroup] = useState(MUSCLE_GROUPS[0]);
   const [equipment, setEquipment] = useState('Maschine');
@@ -122,6 +123,9 @@ function AddExercise({ initialName, onSave, onClose }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!name.trim()) return setError(t('addExercise.nameMissing'));
+          const lower = name.trim().toLowerCase();
+          const twin = [...exercises.values()].find((x) => [x.name, x.en, exName(x)].some((n) => n?.trim().toLowerCase() === lower));
+          if (twin) return setError(t('addExercise.duplicate', { name: exName(twin) }));
           onSave({ name: name.trim(), group, equipment, type: equipment === 'Körpergewicht' ? 'bodyweight' : 'weight' });
         }}
       >

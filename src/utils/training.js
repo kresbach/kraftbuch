@@ -30,6 +30,55 @@ export const exerciseVolume = (ex) => (TIMED_IDS.has(ex.exerciseId) ? 0
 
 export const workoutVolume = (w) => w.exercises.reduce((sum, ex) => sum + exerciseVolume(ex), 0);
 
+// ---- Persönliche Rekorde ----
+// Mit Gewicht zählt das geschätzte 1RM, ohne Gewicht die Wiederholungen (bzw. Sekunden).
+
+/** Bestwerte je Übung aus abgeschlossenen Trainings: Map id → {e1rm, reps} (reps = ohne Gewicht). */
+export function bestsByExercise(workouts) {
+  const map = new Map();
+  for (const w of workouts) for (const ex of w.exercises) addBest(map, ex);
+  return map;
+}
+
+function addBest(map, ex) {
+  const cur = map.get(ex.exerciseId) ?? { e1rm: 0, reps: 0 };
+  for (const s of ex.sets) {
+    if (!s.done) continue;
+    const kg = parseNum(s.kg), reps = parseNum(s.reps);
+    if (kg > 0) cur.e1rm = Math.max(cur.e1rm, estimate1RM(kg, reps));
+    else cur.reps = Math.max(cur.reps, reps);
+  }
+  map.set(ex.exerciseId, cur);
+}
+
+/** Ist dieser Satz besser als alles bisher? Beim ersten Mal gibt es noch keinen Rekord. */
+export function isRecord(set, best) {
+  if (!set.done || !best) return false;
+  const kg = parseNum(set.kg), reps = parseNum(set.reps);
+  return kg > 0 ? best.e1rm > 0 && estimate1RM(kg, reps) > best.e1rm + 1e-9 : best.reps > 0 && reps > best.reps;
+}
+
+/** Bester Rekordsatz einer Übung im Training (oder null). */
+export function recordSet(ex, best) {
+  const records = ex.sets.filter((s) => isRecord(s, best));
+  if (!records.length) return null;
+  return records.reduce((a, s) => (parseNum(s.kg) > 0
+    ? (estimate1RM(parseNum(s.kg), parseNum(s.reps)) > estimate1RM(parseNum(a.kg), parseNum(a.reps)) ? s : a)
+    : (parseNum(s.reps) > parseNum(a.reps) ? s : a)));
+}
+
+/** Anzahl der Übungen mit neuem Rekord je Training (Verlauf neuestes zuerst). Map workoutId → Anzahl */
+export function recordCounts(workouts) {
+  const result = new Map();
+  const bests = new Map();
+  for (let i = workouts.length - 1; i >= 0; i--) { // ältestes zuerst durchgehen
+    const w = workouts[i];
+    result.set(w.id, w.exercises.filter((ex) => recordSet(ex, bests.get(ex.exerciseId))).length);
+    for (const ex of w.exercises) addBest(bests, ex);
+  }
+  return result;
+}
+
 export const doneSets = (ex) => ex.sets.filter((s) => s.done && parseNum(s.reps) > 0);
 
 // Wettkampfscheiben (IWF-Farben) – für die Anzeige „Scheiben pro Seite“.

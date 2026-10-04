@@ -277,6 +277,14 @@ body.keyboard-open .tabbar { display: none; }
 .moved-value { font-size: 24px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .ex-moved { margin-left: auto; align-self: center; }
 
+/* Rekorde und Notizen */
+.pill-record { margin-left: 0; display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; background: #f6e7b8; color: #6b4e00; animation: record-in 0.35s ease-out; }
+@media (prefers-color-scheme: dark) { .pill-record { background: #3d3310; color: #f3d77a; } }
+@keyframes record-in { from { transform: scale(0.85); opacity: 0; } }
+.last-note { font-style: italic; }
+textarea.text-input { padding: 10px 14px; min-height: 44px; resize: vertical; font: inherit; font-size: 16px; line-height: 1.4; }
+.detail-note { margin: 0; white-space: pre-wrap; color: var(--fg); font-style: italic; }
+
 /* Letztes Training (Startseite) und Trainings im Verlauf: Gewicht rechts groß */
 .last-workout, .history-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
 .last-workout { padding: 14px 16px; text-align: left; border: 1px solid var(--line); }

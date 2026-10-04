@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon.jsx';
 import { ProgressChart } from '../components/ProgressChart.jsx';
 import { Sheet } from '../components/Sheet.jsx';
 import { useUndo } from '../components/Undo.jsx';
-import { cleanKg, cleanReps, estimate1RM, exerciseVolume, fmtDate, fmtDuration, fmtNum, fmtWeight, parseNum, workoutVolume } from '../utils/training.js';
+import { cleanKg, cleanReps, estimate1RM, exerciseVolume, recordCounts, fmtDate, fmtDuration, fmtNum, fmtWeight, parseNum, workoutVolume } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 
 const SECTIONS = [
@@ -50,6 +50,7 @@ function WorkoutList() {
   const withUndo = useUndo();
   const [open, setOpen] = useState(null);
   const [editing, setEditing] = useState(null);
+  const records = useMemo(() => recordCounts(state.workouts), [state.workouts]);
 
   if (state.workouts.length === 0) {
     return <p className="muted">{t('history.empty')}</p>;
@@ -70,6 +71,7 @@ function WorkoutList() {
                   <span className="muted small num">
                     {fmtDuration(new Date(w.finishedAt) - new Date(w.startedAt))} · {t('history.sets', { n: sets })}
                   </span>
+                  {records.get(w.id) > 0 && <span className="pill pill-record"><Icon name="trophy" size={14} /> {t('records.count', { n: records.get(w.id) })}</span>}
                 </span>
                 <span className="history-moved">
                   <span className="moved-value num">{fmtWeight(workoutVolume(w))}</span>
@@ -78,6 +80,7 @@ function WorkoutList() {
               </button>
               {isOpen && (
                 <div className="workout-detail">
+                  {w.note?.trim() && <p className="detail-note">{w.note.trim()}</p>}
                   {w.exercises.map((ex, i) => {
                     const info = exercises.get(ex.exerciseId);
                     const v = exerciseVolume(ex);
@@ -88,6 +91,7 @@ function WorkoutList() {
                           {v > 0 && <span className="muted small num">{fmtWeight(v)}</span>}
                         </span>
                         <span className="muted num">{ex.sets.map((s) => fmtSet(s, info, t)).join(' · ')}</span>
+                        {ex.note?.trim() && <span className="small detail-note">{ex.note.trim()}</span>}
                       </div>
                     );
                   })}
@@ -117,6 +121,7 @@ function WorkoutEditor({ workout, onClose }) {
   const { dispatch, exercises } = useStore();
   const { t, exName, planName } = useI18n();
   const withUndo = useUndo();
+  const [note, setNote] = useState(workout.note ?? '');
   const [draft, setDraft] = useState(() => workout.exercises.map((ex) => ({
     ...ex, sets: ex.sets.map((s) => ({ kg: s.kg ? String(s.kg).replace('.', ',') : '', reps: String(s.reps) })),
   })));
@@ -125,6 +130,7 @@ function WorkoutEditor({ workout, onClose }) {
   const setField = (i, j, key, value) => update((d) => { d[i].sets[j][key] = value; return d; });
   const addSet = (i) => update((d) => { const last = d[i].sets.at(-1); d[i].sets.push({ kg: last?.kg ?? '', reps: last?.reps ?? '' }); return d; });
   const removeSet = (i, j) => update((d) => { d[i].sets.splice(j, 1); return d; });
+  const setExNote = (i, value) => update((d) => { d[i].note = value; return d; });
   const removeExercise = (i) => update((d) => { d.splice(i, 1); return d; });
 
   function save(e) {
@@ -136,7 +142,7 @@ function WorkoutEditor({ workout, onClose }) {
       }))
       .filter((ex) => ex.sets.length > 0);
     if (cleaned.length === 0) withUndo(t('undo.workoutDeleted'), { type: 'history/delete', id: workout.id }, ['workouts']);
-    else dispatch({ type: 'history/update', workout: { ...workout, exercises: cleaned } });
+    else dispatch({ type: 'history/update', workout: { ...workout, note, exercises: cleaned } });
     onClose();
   }
 
@@ -175,9 +181,15 @@ function WorkoutEditor({ workout, onClose }) {
                 ))}
               </div>
               <button type="button" className="btn btn-small" onClick={() => addSet(i)}><Icon name="plus" size={16} /> {t('workout.set')}</button>
+              <textarea id={`h-${i}-note`} className="text-input" rows={1} value={ex.note ?? ''} placeholder={t('notes.exercisePlaceholder')}
+                aria-label={t('notes.exercise')} onChange={(e) => setExNote(i, e.target.value)} />
             </section>
           );
         })}
+        <label className="field">
+          <span className="field-label">{t('notes.workout')}</span>
+          <textarea id="h-note" className="text-input" rows={2} value={note} placeholder={t('notes.workoutPlaceholder')} onChange={(e) => setNote(e.target.value)} />
+        </label>
         <button type="submit" className="btn btn-primary btn-block"><Icon name="check" size={18} /> {t('history.save')}</button>
       </form>
     </Sheet>

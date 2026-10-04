@@ -6,6 +6,7 @@ import { ExercisePicker } from '../components/ExercisePicker.jsx';
 import { DragHandle, moveItem, useSortable } from '../components/Sortable.jsx';
 import { uid } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
+import { useBackClose } from '../utils/useBackClose.js';
 
 // Offener Plan-Entwurf – bleibt erhalten, wenn zwischendurch ein anderer Tab geöffnet wird
 let pendingDraft = null;
@@ -90,6 +91,7 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => { pendingDraft = plan; }, [plan]);
+  useBackClose(onCancel);
 
   const setLine = (i, patch) =>
     setPlan((p) => ({ ...p, exercises: p.exercises.map((pe, j) => (j === i ? { ...pe, ...patch } : pe)) }));

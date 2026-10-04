@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../state/store.jsx';
-import { lastSetsFor } from '../state/reducer.js';
+import { lastNoteFor, lastSetsFor } from '../state/reducer.js';
 import { Icon } from '../components/Icon.jsx';
 import { ConfirmButton } from '../components/ConfirmButton.jsx';
 import { ExercisePicker } from '../components/ExercisePicker.jsx';
@@ -8,7 +8,7 @@ import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
 import { CloudBanner } from '../components/CloudSettings.jsx';
 import { DragHandle, useSortable } from '../components/Sortable.jsx';
-import { cleanKg, cleanReps, exerciseVolume, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeight, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
+import { bestsByExercise, cleanKg, cleanReps, exerciseVolume, isRecord, recordCounts, recordSet, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeight, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
 import { unlockSound } from '../utils/sound.js';
 import { useUndo } from '../components/Undo.jsx';
 import { useI18n } from '../i18n/index.jsx';
@@ -106,6 +106,9 @@ function ActiveWorkout() {
   const openCount = w.exercises.reduce((n, ex) => n + ex.sets.filter((s) => !s.done && parseNum(s.reps) > 0).length, 0);
 
   const moved = workoutVolume(w);
+  const bests = useMemo(() => bestsByExercise(state.workouts), [state.workouts]);
+  const [openNotes, setOpenNotes] = useState(() => new Set());
+  const toggleNote = (i) => setOpenNotes((s) => { const n = new Set(s); n.has(i) ? n.delete(i) : n.add(i); return n; });
 
   useWakeLock(); // Bildschirm bleibt während des Trainings an
 
@@ -117,6 +120,7 @@ function ActiveWorkout() {
     }
     if (!set.done && state.settings.restSound !== false) unlockSound(); // Ton am Pausenende erlauben (iOS)
     dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { done: !set.done } });
+    if (isRecord({ ...set, done: true }, bests.get(w.exercises[exIndex].exerciseId)) && !set.done) navigator.vibrate?.([60, 40, 60, 40, 120]);
     if (!set.done) setRestEnd(Date.now() + state.settings.restSeconds * 1000);
   }
 
@@ -147,6 +151,11 @@ function ActiveWorkout() {
       </section>
 
       <div className="workout-actions">
+        <label className="field workout-note">
+          <span className="field-label">{t('notes.workout')}</span>
+          <textarea id="workout-note" className="text-input" rows={2} value={w.note ?? ''} placeholder={t('notes.workoutPlaceholder')}
+            onChange={(e) => dispatch({ type: 'workout/note', note: e.target.value })} />
+        </label>
         <button className="btn btn-block" onClick={() => setPicking(true)}>
           <Icon name="plus" size={18} /> {t('picker.title')}
         </button>
@@ -177,6 +186,9 @@ function ActiveWorkout() {
           const repsLabel = info?.timed ? t('workout.seconds') : t('workout.reps');
           const fmtReps = (r) => (info?.timed ? `${r} s` : `${r}`);
           const exMoved = exerciseVolume(ex);
+          const record = recordSet(ex, bests.get(ex.exerciseId));
+          const lastNote = lastNoteFor(state, ex.exerciseId);
+          const noteOpen = openNotes.has(exIndex) || !!ex.note;
           // Scheibenanzeige für den nächsten offenen Satz, sonst das zuletzt eingetragene Gewicht
           const filled = ex.sets.filter((s) => parseNum(s.kg) > 0);
           const nextKg = parseNum(ex.sets.find((s) => !s.done)?.kg);
@@ -186,9 +198,13 @@ function ActiveWorkout() {
               <header className="exercise-head">
                 <div>
                   <h2>{exName(info)}</h2>
+                  {record && (
+                    <span className="pill pill-record"><Icon name="trophy" size={14} /> {t('records.new')}: {parseNum(record.kg) > 0 ? `${fmtNum(parseNum(record.kg))} kg × ${fmtReps(record.reps)}` : fmtReps(record.reps)}</span>
+                  )}
                   <p className="muted small">
                     {last ? t('workout.lastTime', { sets: last.map((s) => (s.kg ? `${fmtNum(s.kg)}×${fmtReps(s.reps)}` : fmtReps(s.reps))).join(', ') }) : t('workout.firstTime')}
                   </p>
+                  {lastNote && <p className="muted small last-note">{t('notes.last')}: {lastNote}</p>}
                 </div>
                 <div className="exercise-tools">
                   <button className="icon-btn danger" aria-label={t('planEditor.remove')}
@@ -225,6 +241,12 @@ function ActiveWorkout() {
                 ))}
               </div>
 
+              {noteOpen && (
+                <textarea id={`w-${exIndex}-note`} className="text-input ex-note" rows={2} value={ex.note ?? ''} placeholder={t('notes.exercisePlaceholder')}
+                  aria-label={t('notes.exercise')} autoFocus={!ex.note}
+                  onChange={(e) => dispatch({ type: 'workout/note', exIndex, note: e.target.value })} />
+              )}
+
               <div className="row-actions">
                 <button className="btn btn-small" onClick={() => dispatch({ type: 'workout/addSet', exIndex })}>
                   <Icon name="plus" size={16} /> {t('workout.set')}
@@ -233,6 +255,9 @@ function ActiveWorkout() {
                   <button className="btn btn-small btn-ghost" onClick={() => withUndo(t('undo.setRemoved'), { type: 'workout/removeSet', exIndex, setIndex: ex.sets.length - 1 }, ['activeWorkout'])}>
                     {t('workout.removeLastSet')}
                   </button>
+                )}
+                {!noteOpen && (
+                  <button className="btn btn-small btn-ghost" onClick={() => toggleNote(exIndex)}>{t('notes.add')}</button>
                 )}
                 {exMoved > 0 && <span className="ex-moved muted small num">{fmtWeight(exMoved)}</span>}
               </div>
@@ -260,6 +285,8 @@ function ActiveWorkout() {
 /** Zusammenfassung des letzten Trainings auf dem Startbildschirm – mit dem insgesamt bewegten Gewicht. */
 function LastWorkout({ workout: w, onOpen }) {
   const { t, planName } = useI18n();
+  const { state } = useStore();
+  const records = useMemo(() => recordCounts(state.workouts).get(w.id) ?? 0, [state.workouts, w.id]);
   const sets = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
   const justNow = Date.now() - new Date(w.finishedAt).getTime() < 15 * 60_000;
   return (
@@ -273,6 +300,7 @@ function LastWorkout({ workout: w, onOpen }) {
           <span className="eyebrow">{fmtDate(w.startedAt)}</span>
           <strong>{planName(w.planId, w.name)}</strong>
           <span className="muted small num">{fmtDuration(new Date(w.finishedAt) - new Date(w.startedAt))} · {t('history.sets', { n: sets })}</span>
+          {records > 0 && <span className="pill pill-record"><Icon name="trophy" size={14} /> {t('records.count', { n: records })}</span>}
         </span>
         <span className="last-workout-moved">
           <span className="moved-value num">{fmtWeight(workoutVolume(w))}</span>

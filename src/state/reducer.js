@@ -15,8 +15,8 @@ export const initialState = {
 };
 
 // Diese Teile des Zustands werden gesichert bzw. mit der Cloud abgeglichen.
-// Das laufende Training bleibt bewusst nur auf dem Gerät.
-export const SYNCED_KEYS = ['customExercises', 'plans', 'workouts', 'settings'];
+// Das laufende Training wird mit abgeglichen, damit es auf einem anderen Gerät fortgesetzt werden kann.
+export const SYNCED_KEYS = ['customExercises', 'plans', 'workouts', 'settings', 'activeWorkout'];
 
 export function syncedData(state) {
   const data = { app: 'kraftbuch', version: state.version, updatedAt: state.updatedAt };
@@ -38,6 +38,15 @@ export function exerciseMap(state) {
   const map = new Map();
   for (const ex of [...DEFAULT_EXERCISES, ...state.customExercises]) map.set(ex.id, ex);
   return map;
+}
+
+/** Notiz zu einer Übung vom letzten Mal, an dem eine geschrieben wurde. */
+export function lastNoteFor(state, exerciseId) {
+  for (const w of state.workouts) {
+    const note = w.exercises.find((e) => e.exerciseId === exerciseId && e.note?.trim())?.note;
+    if (note) return note.trim();
+  }
+  return '';
 }
 
 /** Letzte erledigte Sätze einer Übung aus dem Verlauf (für Vorbelegung und Hinweis). */
@@ -160,6 +169,9 @@ export function reducer(state, action) {
       const finished = { ...w, exercises, finishedAt: new Date().toISOString() };
       return { ...state, activeWorkout: null, workouts: [finished, ...state.workouts] };
     }
+    case 'workout/note': // Notiz zum Training (ohne exIndex) oder zu einer Übung
+      if (action.exIndex == null) return { ...state, activeWorkout: { ...state.activeWorkout, note: action.note } };
+      return updateWorkoutExercise(state, action.exIndex, (ex) => ({ ...ex, note: action.note }));
     case 'workout/rest': // Pausen-Ende im Training speichern – übersteht Tab-Wechsel und Neuladen
       return { ...state, activeWorkout: { ...state.activeWorkout, restEndsAt: action.endsAt } };
     case 'workout/discard':

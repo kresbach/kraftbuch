@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from './Icon.jsx';
 import { useI18n } from '../i18n/index.jsx';
+import { useBackClose } from '../utils/useBackClose.js';
 
 // Von unten einfahrendes Panel (auf Desktop zentrierter Dialog).
 // `tall`: nutzt die volle Höhe – für Listen mit Suche (z. B. Übungsauswahl).
 export function Sheet({ title, onClose, children, tall = false }) {
   const { t } = useI18n();
   const backdrop = useRef(null);
+  useBackClose(onClose);
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();

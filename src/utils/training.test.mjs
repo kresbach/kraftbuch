@@ -1,6 +1,6 @@
 // Schnelltest: node src/utils/training.test.mjs
 import assert from 'node:assert/strict';
-import { cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
+import { bestsByExercise, recordCounts, cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
 
 assert.equal(estimate1RM(100, 1), 100);
 assert.equal(Math.round(estimate1RM(100, 5)), 117);
@@ -27,4 +27,13 @@ assert.equal(cleanKg('100000'), null);
 assert.equal(cleanReps('8,5'), null);
 assert.equal(cleanReps('12'), '12');
 assert.equal(workoutVolume({ exercises: [{ exerciseId: 'plank', sets: [{ kg: 10, reps: 60, done: true }] }] }), 0);
+{
+  const w = (id, kg, reps) => ({ id, exercises: [{ exerciseId: 'x', sets: [{ kg, reps, done: true }] }] });
+  const hist = [w('c', 80, 5), w('b', 70, 5), w('a', 80, 3)]; // neuestes zuerst
+  const counts = recordCounts(hist);
+  assert.equal(counts.get('a'), 0); // erstes Mal: kein Rekord
+  assert.equal(counts.get('b'), 0); // 70×5 (81,7) < 80×3 (88)
+  assert.equal(counts.get('c'), 1); // 80×5 (93,3) > 88
+  assert.equal(Math.round(bestsByExercise(hist).get('x').e1rm), 93);
+}
 console.log('training.js: alle Tests bestanden');

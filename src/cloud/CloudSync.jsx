@@ -211,7 +211,8 @@ export function CloudSyncProvider({ children }) {
   /** Aus einem Tippen heraus: Sicherung über das Teilen-Menü (iOS) oder als Download speichern. */
   const backupToFile = useCallback(async () => {
     const snapshot = stateRef.current;
-    const json = JSON.stringify(syncedData(snapshot), null, 2);
+    const { activeWorkout, ...data } = syncedData(snapshot); // laufendes Training nicht in die Datei
+    const json = JSON.stringify(data, null, 2);
     // Auf dem Handy fester Name (alte Sicherung in iCloud Drive ersetzen), am Desktop mit Datum
     const date = new Date().toISOString().slice(0, 10);
     const name = matchMedia('(pointer: coarse)').matches ? 'Kraftbuch-Backup.json' : `Kraftbuch-Backup-${date}.json`;
