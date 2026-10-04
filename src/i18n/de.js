@@ -53,6 +53,7 @@ export default {
     'workout.removeLastSet': 'Letzten Satz entfernen',
     'workout.finish': 'Training abschließen',
     'workout.finishHint': 'Hake mindestens einen Satz ab, um das Training zu speichern.',
+    'workout.finishOpen': ({ n }) => (n === 1 ? '1 Satz nicht abgehakt – trotzdem abschließen?' : `${n} Sätze nicht abgehakt – trotzdem abschließen?`),
     'workout.discard': 'Training verwerfen',
     'workout.discardConfirm': 'Ja, Training verwerfen',
     'rest.label': 'Pause',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../state/store.jsx';
 import { Icon } from '../components/Icon.jsx';
 import { ConfirmButton } from '../components/ConfirmButton.jsx';
@@ -7,10 +7,14 @@ import { DragHandle, moveItem, useSortable } from '../components/Sortable.jsx';
 import { uid } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 
+// Offener Plan-Entwurf – bleibt erhalten, wenn zwischendurch ein anderer Tab geöffnet wird
+let pendingDraft = null;
+
 export default function PlansView({ goTo }) {
   const { state, dispatch, exercises } = useStore();
   const { t, exName, planName } = useI18n();
-  const [editing, setEditing] = useState(null); // Plan-Entwurf oder null
+  const [editing, setEditingState] = useState(() => pendingDraft); // Plan-Entwurf oder null
+  const setEditing = (draft) => { pendingDraft = draft; setEditingState(draft); };
   const sortable = useSortable((from, to) => dispatch({ type: 'plan/move', from, to }));
 
   if (editing) {
@@ -84,6 +88,7 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
   const [plan, setPlan] = useState(draft);
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => { pendingDraft = plan; }, [plan]);
 
   const setLine = (i, patch) =>
     setPlan((p) => ({ ...p, exercises: p.exercises.map((pe, j) => (j === i ? { ...pe, ...patch } : pe)) }));

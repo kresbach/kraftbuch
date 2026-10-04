@@ -155,6 +155,8 @@ export function reducer(state, action) {
       const finished = { ...w, exercises, finishedAt: new Date().toISOString() };
       return { ...state, activeWorkout: null, workouts: [finished, ...state.workouts] };
     }
+    case 'workout/rest': // Pausen-Ende im Training speichern – übersteht Tab-Wechsel und Neuladen
+      return { ...state, activeWorkout: { ...state.activeWorkout, restEndsAt: action.endsAt } };
     case 'workout/discard':
       return { ...state, activeWorkout: null };
 

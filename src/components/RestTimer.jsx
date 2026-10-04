@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon.jsx';
 import { useI18n } from '../i18n/index.jsx';
 
@@ -14,9 +14,15 @@ export function RestTimer({ endsAt, total, onChange }) {
 
   const left = Math.max(0, Math.ceil((endsAt - now) / 1000));
 
+  // Nur vibrieren, wenn die Pause gerade abläuft – nicht beim erneuten Öffnen einer schon abgelaufenen
+  const wasRunning = useRef(left > 0);
   useEffect(() => {
-    if (left === 0) navigator.vibrate?.([200, 100, 200]);
-  }, [left === 0]);
+    if (left > 0) wasRunning.current = true;
+    else if (wasRunning.current) {
+      wasRunning.current = false;
+      navigator.vibrate?.([200, 100, 200]);
+    }
+  }, [left === 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mm = Math.floor(left / 60);
   const ss = String(left % 60).padStart(2, '0');

@@ -89,11 +89,16 @@ function ActiveWorkout() {
   const { t, exName, planName } = useI18n();
   const w = state.activeWorkout;
   const [picking, setPicking] = useState(false);
-  const [restEnd, setRestEnd] = useState(null);
+  // Pause liegt im Trainingszustand, damit sie beim Wechsel in einen anderen Tab weiterläuft.
+  // Eine längst abgelaufene Pause (z. B. nach Stunden neu geöffnet) wird nicht mehr angezeigt.
+  const restEnd = w.restEndsAt && Date.now() - w.restEndsAt < 5 * 60_000 ? w.restEndsAt : null;
+  const setRestEnd = (endsAt) => dispatch({ type: 'workout/rest', endsAt });
   const sortable = useSortable((from, to) => dispatch({ type: 'workout/moveExercise', from, to }));
 
   const doneCount = w.exercises.reduce((n, ex) => n + ex.sets.filter((s) => s.done).length, 0);
   const totalCount = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
+  // Ausgefüllte, aber nicht abgehakte Sätze werden beim Abschließen nicht gespeichert – darauf hinweisen
+  const openCount = w.exercises.reduce((n, ex) => n + ex.sets.filter((s) => !s.done && parseNum(s.reps) > 0).length, 0);
 
   function toggleDone(exIndex, setIndex, set) {
     dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { done: !set.done } });
@@ -128,9 +133,15 @@ function ActiveWorkout() {
         </button>
 
         <div className="finish">
-          <button className="btn btn-primary btn-block" onClick={() => dispatch({ type: 'workout/finish' })} disabled={doneCount === 0}>
-            <Icon name="check" size={18} /> {t('workout.finish')}
-          </button>
+          {doneCount > 0 && openCount > 0 ? (
+            <ConfirmButton className="btn btn-primary btn-block" confirmLabel={t('workout.finishOpen', { n: openCount })} onConfirm={() => dispatch({ type: 'workout/finish' })}>
+              <Icon name="check" size={18} /> {t('workout.finish')}
+            </ConfirmButton>
+          ) : (
+            <button className="btn btn-primary btn-block" onClick={() => dispatch({ type: 'workout/finish' })} disabled={doneCount === 0}>
+              <Icon name="check" size={18} /> {t('workout.finish')}
+            </button>
+          )}
           {doneCount === 0 && <p className="muted small center">{t('workout.finishHint')}</p>}
           <ConfirmButton className="btn btn-ghost danger btn-block" confirmLabel={t('workout.discardConfirm')} onConfirm={() => dispatch({ type: 'workout/discard' })}>
             {t('workout.discard')}

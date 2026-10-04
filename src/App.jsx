@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from './state/store.jsx';
 import TrainingView from './views/TrainingView.jsx';
 import PlansView from './views/PlansView.jsx';
@@ -17,7 +17,15 @@ const TABS = [
 ];
 
 export default function App() {
-  const [tab, setTab] = useState('training');
+  const [tab, setTabState] = useState('training');
+  // Jeder Tab merkt sich seine Scrollposition; ein neu geöffneter Tab beginnt oben.
+  const scrollPos = useRef({});
+  const setTab = (next) => {
+    if (next === tab) return window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollPos.current[tab] = window.scrollY;
+    setTabState(next);
+  };
+  useLayoutEffect(() => { window.scrollTo(0, scrollPos.current[tab] ?? 0); }, [tab]);
   const { state } = useStore();
   const { t } = useI18n();
   const { View, wide } = TABS.find((x) => x.id === tab);

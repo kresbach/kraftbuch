@@ -53,6 +53,7 @@ export default {
     'workout.removeLastSet': 'Remove last set',
     'workout.finish': 'Finish workout',
     'workout.finishHint': 'Tick off at least one set to save the workout.',
+    'workout.finishOpen': ({ n }) => (n === 1 ? '1 set not ticked – finish anyway?' : `${n} sets not ticked – finish anyway?`),
     'workout.discard': 'Discard workout',
     'workout.discardConfirm': 'Yes, discard workout',
     'rest.label': 'Rest',

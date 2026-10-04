@@ -21,6 +21,7 @@
   --tabbar-h: 64px;
   --content-w: 640px; /* Breite von Inhalt und Tab-Leiste auf großen Bildschirmen */
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --seg-on: var(--surface); /* gewählte Option in Umschaltern */
   color-scheme: light;
 }
 
@@ -40,6 +41,7 @@
     --good-fg: #0d2617;
     --good-soft: #173222;
     --danger: #ff8a73;
+    --seg-on: #3a4334; /* im Dunkeln heller als der Hintergrund, sonst wirkt die Auswahl „eingedrückt“ */
     color-scheme: dark;
   }
 }
@@ -209,7 +211,7 @@ body.keyboard-open .tabbar { display: none; }
   flex: 1; min-height: 38px; border: 0; border-radius: 8px; background: transparent;
   font-size: 14px; font-weight: 650; color: var(--muted);
 }
-.segmented button.is-on { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+.segmented button.is-on { background: var(--seg-on); color: var(--fg); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
 
 .pill {
   display: inline-block; vertical-align: middle;
