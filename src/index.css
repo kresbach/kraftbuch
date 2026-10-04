@@ -234,6 +234,8 @@ body.keyboard-open .tabbar { display: none; }
 .plan-card .card-corner + .plan-card-text { padding-right: 28px; } /* Platz für den Griff oben rechts */
 .plan-card > .btn { align-self: flex-end; }
 .plan-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+/* Lange Übungslisten auf zwei Zeilen kürzen, damit die Karten kompakt bleiben */
+.plan-card-text p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .plan-lines { width: 100%; display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
 .plan-lines li { display: flex; justify-content: space-between; gap: 12px; }
 .plan-lines li > span:last-child { flex: none; white-space: nowrap; }
@@ -267,6 +269,46 @@ body.keyboard-open .tabbar { display: none; }
 .elapsed-time { font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -0.02em; color: var(--accent-text); }
 .sets-count { font-size: 28px; line-height: 1.1; font-weight: 800; }
 .progress-track { display: block; height: 6px; margin-top: auto; border-radius: 3px; background: color-mix(in srgb, var(--accent) 18%, transparent); overflow: hidden; }
+/* Gesamtgewicht im laufenden Training: eigene Zeile unter Zeit und Sätzen */
+.workout-status > .moved {
+  grid-column: 1 / -1; flex-direction: row; align-items: baseline; justify-content: space-between;
+  padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.moved-value { font-size: 24px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.ex-moved { margin-left: auto; align-self: center; }
+
+/* Letztes Training (Startseite) und Trainings im Verlauf: Gewicht rechts groß */
+.last-workout, .history-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+.last-workout { padding: 14px 16px; text-align: left; border: 1px solid var(--line); }
+.last-workout-text, .history-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.last-workout-moved, .history-moved { display: flex; flex-direction: column; align-items: flex-end; flex: none; text-align: right; }
+.last-workout-moved .moved-value, .history-moved .moved-value { color: var(--accent-text); }
+.detail-title { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.workout-detail .row-actions .btn { align-self: auto; }
+
+/* Training im Verlauf bearbeiten */
+.edit-exercise { display: flex; flex-direction: column; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.edit-exercise h3 { margin: 0; font-size: 16px; }
+.edit-exercise .exercise-head { align-items: center; }
+.edit-exercise > .btn { align-self: flex-start; }
+.set-remove { width: 52px; height: 46px; }
+
+/* Hinweis mit „Rückgängig“ */
+.toast {
+  position: fixed; z-index: 30; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--tabbar-h) + var(--safe-b) + 10px);
+  width: min(608px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 10px 10px 16px; border-radius: var(--radius);
+  background: var(--fg); color: var(--bg); box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  animation: toast-in 0.18s ease-out;
+}
+.toast span { flex: 1; min-width: 0; }
+.toast .btn { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--bg) 35%, transparent); font-weight: 700; }
+body:has(.rest) .toast { bottom: calc(var(--tabbar-h) + var(--safe-b) + 76px); } /* über dem Pausen-Timer */
+body.keyboard-open .toast { bottom: calc(var(--safe-b) + 10px); }
+@keyframes toast-in { from { transform: translate(-50%, 12px); opacity: 0; } }
+
 .progress-fill { display: block; height: 100%; background: var(--good); transform-origin: left; transition: transform 0.3s ease; }
 
 .workout { display: flex; flex-direction: column; gap: 12px; }
@@ -465,6 +507,8 @@ body.keyboard-open .tabbar { display: none; }
   .content { padding-inline: 24px; }
   .search-sticky { margin-inline: -24px; padding-inline: 24px; }
   .search-sticky .chips { margin-inline: -24px; padding-inline: 24px; }
+  /* Satztabelle nicht über die ganze Breite ziehen */
+  .exercise .set-table, .exercise .plates { max-width: 460px; }
 }
 @media (min-width: 1024px) {
   .search-sticky .chips { flex-wrap: wrap; overflow: visible; }

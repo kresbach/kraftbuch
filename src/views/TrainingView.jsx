@@ -8,7 +8,9 @@ import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
 import { CloudBanner } from '../components/CloudSettings.jsx';
 import { DragHandle, useSortable } from '../components/Sortable.jsx';
-import { fmtClock, fmtLongToday, fmtNum, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
+import { exerciseVolume, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeight, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
+import { unlockSound } from '../utils/sound.js';
+import { useUndo } from '../components/Undo.jsx';
 import { useI18n } from '../i18n/index.jsx';
 
 export default function TrainingView({ goTo }) {
@@ -44,8 +46,10 @@ function StartScreen({ goTo }) {
       <section className="stats" aria-label={t('training.thisWeek')}>
         <div className="stat"><span className="stat-value num">{thisWeek.length}</span><span className="stat-label">{t('training.statWorkouts')}</span></div>
         <div className="stat"><span className="stat-value num">{sets}</span><span className="stat-label">{t('training.statSets')}</span></div>
-        <div className="stat"><span className="stat-value num">{fmtNum(Math.round(volume))}</span><span className="stat-label">{t('training.statVolume')}</span></div>
+        <div className="stat"><span className="stat-value num">{fmtWeight(volume)}</span><span className="stat-label">{t('training.statVolume')}</span></div>
       </section>
+
+      {state.workouts[0] && <LastWorkout workout={state.workouts[0]} onOpen={() => goTo('history')} />}
 
       <section className="section">
         <div className="section-head">
@@ -87,6 +91,7 @@ function StartScreen({ goTo }) {
 function ActiveWorkout() {
   const { state, dispatch, exercises } = useStore();
   const { t, exName, planName } = useI18n();
+  const withUndo = useUndo();
   const w = state.activeWorkout;
   const [picking, setPicking] = useState(false);
   // Pause liegt im Trainingszustand, damit sie beim Wechsel in einen anderen Tab weiterläuft.
@@ -100,7 +105,10 @@ function ActiveWorkout() {
   // Ausgefüllte, aber nicht abgehakte Sätze werden beim Abschließen nicht gespeichert – darauf hinweisen
   const openCount = w.exercises.reduce((n, ex) => n + ex.sets.filter((s) => !s.done && parseNum(s.reps) > 0).length, 0);
 
+  const moved = workoutVolume(w);
+
   function toggleDone(exIndex, setIndex, set) {
+    if (!set.done && state.settings.restSound !== false) unlockSound(); // Ton am Pausenende erlauben (iOS)
     dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { done: !set.done } });
     if (!set.done) setRestEnd(Date.now() + state.settings.restSeconds * 1000);
   }
@@ -125,6 +133,10 @@ function ActiveWorkout() {
             <span className="progress-fill" style={{ transform: `scaleX(${totalCount ? doneCount / totalCount : 0})` }} />
           </span>
         </div>
+        <div className="moved">
+          <span className="status-label">{t('workout.moved')}</span>
+          <span className="moved-value num">{fmtWeight(moved)}</span>
+        </div>
       </section>
 
       <div className="workout-actions">
@@ -143,9 +155,9 @@ function ActiveWorkout() {
             </button>
           )}
           {doneCount === 0 && <p className="muted small center">{t('workout.finishHint')}</p>}
-          <ConfirmButton className="btn btn-ghost danger btn-block" confirmLabel={t('workout.discardConfirm')} onConfirm={() => dispatch({ type: 'workout/discard' })}>
+          <button className="btn btn-ghost danger btn-block" onClick={() => withUndo(t('undo.workoutDiscarded'), { type: 'workout/discard' }, ['activeWorkout'])}>
             {t('workout.discard')}
-          </ConfirmButton>
+          </button>
         </div>
       </div>
       </aside>
@@ -155,6 +167,9 @@ function ActiveWorkout() {
           const info = exercises.get(ex.exerciseId);
           const last = lastSetsFor(state, ex.exerciseId);
           const isBodyweight = info?.type === 'bodyweight';
+          const repsLabel = info?.timed ? t('workout.seconds') : t('workout.reps');
+          const fmtReps = (r) => (info?.timed ? `${r} s` : `${r}`);
+          const exMoved = exerciseVolume(ex);
           // Scheibenanzeige für den nächsten offenen Satz, sonst das zuletzt eingetragene Gewicht
           const filled = ex.sets.filter((s) => parseNum(s.kg) > 0);
           const nextKg = parseNum(ex.sets.find((s) => !s.done)?.kg);
@@ -165,13 +180,14 @@ function ActiveWorkout() {
                 <div>
                   <h2>{exName(info)}</h2>
                   <p className="muted small">
-                    {last ? t('workout.lastTime', { sets: last.map((s) => (s.kg ? `${fmtNum(s.kg)}×${s.reps}` : `${s.reps}`)).join(', ') }) : t('workout.firstTime')}
+                    {last ? t('workout.lastTime', { sets: last.map((s) => (s.kg ? `${fmtNum(s.kg)}×${fmtReps(s.reps)}` : fmtReps(s.reps))).join(', ') }) : t('workout.firstTime')}
                   </p>
                 </div>
                 <div className="exercise-tools">
-                  <ConfirmButton className="icon-btn danger" confirmLabel={t('common.removeQ')} onConfirm={() => dispatch({ type: 'workout/removeExercise', exIndex })}>
+                  <button className="icon-btn danger" aria-label={t('planEditor.remove')}
+                    onClick={() => withUndo(t('undo.exerciseRemoved', { name: exName(info) }), { type: 'workout/removeExercise', exIndex }, ['activeWorkout'])}>
                     <Icon name="trash" size={18} />
-                  </ConfirmButton>
+                  </button>
                   <DragHandle label={t('sort.handle')} {...sortable.handleProps(exIndex, w.exercises.length)} />
                 </div>
               </header>
@@ -182,7 +198,7 @@ function ActiveWorkout() {
                 <div className="set-row set-row-head" role="row">
                   <span role="columnheader">{t('workout.set')}</span>
                   <span role="columnheader">{isBodyweight ? '+kg' : 'kg'}</span>
-                  <span role="columnheader">{t('workout.reps')}</span>
+                  <span role="columnheader">{repsLabel}</span>
                   <span role="columnheader" className="sr-only">{t('workout.done')}</span>
                 </div>
                 {ex.sets.map((set, setIndex) => (
@@ -192,7 +208,7 @@ function ActiveWorkout() {
                       placeholder={isBodyweight ? '0' : '–'} value={set.kg} aria-label={t('workout.ariaWeight', { n: setIndex + 1 })}
                       onChange={(e) => dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { kg: e.target.value } })} />
                     <input id={`w-${exIndex}-${setIndex}-reps`} className="num-input" role="cell" inputMode="numeric"
-                      placeholder="–" value={set.reps} aria-label={t('workout.ariaReps', { n: setIndex + 1 })}
+                      placeholder="–" value={set.reps} aria-label={t(info?.timed ? 'workout.ariaSeconds' : 'workout.ariaReps', { n: setIndex + 1 })}
                       onChange={(e) => dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { reps: e.target.value } })} />
                     <button role="cell" className={`check ${set.done ? 'is-on' : ''}`} aria-pressed={set.done}
                       aria-label={t('workout.ariaDone', { n: setIndex + 1 })} onClick={() => toggleDone(exIndex, setIndex, set)}>
@@ -207,10 +223,11 @@ function ActiveWorkout() {
                   <Icon name="plus" size={16} /> {t('workout.set')}
                 </button>
                 {ex.sets.length > 0 && (
-                  <button className="btn btn-small btn-ghost" onClick={() => dispatch({ type: 'workout/removeSet', exIndex, setIndex: ex.sets.length - 1 })}>
+                  <button className="btn btn-small btn-ghost" onClick={() => withUndo(t('undo.setRemoved'), { type: 'workout/removeSet', exIndex, setIndex: ex.sets.length - 1 }, ['activeWorkout'])}>
                     {t('workout.removeLastSet')}
                   </button>
                 )}
+                {exMoved > 0 && <span className="ex-moved muted small num">{fmtWeight(exMoved)}</span>}
               </div>
             </section>
           );
@@ -218,7 +235,7 @@ function ActiveWorkout() {
       </div>
       </div>
 
-      {restEnd && <RestTimer endsAt={restEnd} total={state.settings.restSeconds} onChange={setRestEnd} />}
+      {restEnd && <RestTimer endsAt={restEnd} total={state.settings.restSeconds} onChange={setRestEnd} sound={state.settings.restSound !== false} />}
 
       {picking && (
         <ExercisePicker
@@ -230,6 +247,32 @@ function ActiveWorkout() {
         />
       )}
     </>
+  );
+}
+
+/** Zusammenfassung des letzten Trainings auf dem Startbildschirm – mit dem insgesamt bewegten Gewicht. */
+function LastWorkout({ workout: w, onOpen }) {
+  const { t, planName } = useI18n();
+  const sets = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
+  const justNow = Date.now() - new Date(w.finishedAt).getTime() < 15 * 60_000;
+  return (
+    <section className="section">
+      <div className="section-head">
+        <h2>{t('training.last')}</h2>
+        {justNow && <span className="pill">{t('training.justSaved')}</span>}
+      </div>
+      <button className="card card-button last-workout" onClick={onOpen}>
+        <span className="last-workout-text">
+          <span className="eyebrow">{fmtDate(w.startedAt)}</span>
+          <strong>{planName(w.planId, w.name)}</strong>
+          <span className="muted small num">{fmtDuration(new Date(w.finishedAt) - new Date(w.startedAt))} · {t('history.sets', { n: sets })}</span>
+        </span>
+        <span className="last-workout-moved">
+          <span className="moved-value num">{fmtWeight(workoutVolume(w))}</span>
+          <span className="muted small">{t('workout.moved')}</span>
+        </span>
+      </button>
+    </section>
   );
 }
 

@@ -5,13 +5,14 @@ import { useStore } from '../state/store.jsx';
 import { useI18n } from '../i18n/index.jsx';
 import { Icon } from '../components/Icon.jsx';
 import { Sheet } from '../components/Sheet.jsx';
-import { ConfirmButton } from '../components/ConfirmButton.jsx';
+import { useUndo } from '../components/Undo.jsx';
 import { estimate1RM, fmtNum } from '../utils/training.js';
 
 export default function ExercisesView() {
   const { state, dispatch, exercises } = useStore();
   const i18n = useI18n();
   const { t, exName, group: groupName, equip } = i18n;
+  const withUndo = useUndo();
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
   const [equipment, setEquipment] = useState(null);
@@ -84,9 +85,13 @@ export default function ExercisesView() {
                       </span>
                     </div>
                     {e.custom && (
-                      <ConfirmButton className="icon-btn danger" confirmLabel={t('common.deleteQ')} onConfirm={() => dispatch({ type: 'exercise/delete', id: e.id })}>
+                      <button className="icon-btn danger" aria-label={t('exercises.delete')} onClick={() => {
+                        const inPlans = state.plans.filter((p) => p.exercises.some((pe) => pe.exerciseId === e.id)).length;
+                        withUndo(t(inPlans ? 'undo.exerciseDeletedPlans' : 'undo.exerciseDeleted', { name: exName(e), n: inPlans }),
+                          { type: 'exercise/delete', id: e.id }, ['customExercises', 'plans']);
+                      }}>
                         <Icon name="trash" size={18} />
-                      </ConfirmButton>
+                      </button>
                     )}
                   </li>
                 );

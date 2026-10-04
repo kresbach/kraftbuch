@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../state/store.jsx';
 import { Icon } from '../components/Icon.jsx';
-import { ConfirmButton } from '../components/ConfirmButton.jsx';
 import { ProgressChart } from '../components/ProgressChart.jsx';
-import { estimate1RM, fmtDate, fmtDuration, fmtKg, fmtNum, workoutVolume } from '../utils/training.js';
+import { Sheet } from '../components/Sheet.jsx';
+import { useUndo } from '../components/Undo.jsx';
+import { estimate1RM, exerciseVolume, fmtDate, fmtDuration, fmtNum, fmtWeight, parseNum, workoutVolume } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 
 const SECTIONS = [
@@ -36,46 +37,150 @@ export default function HistoryView() {
 
 /* ---------- Liste der abgeschlossenen Trainings ---------- */
 
+/** Wiederholungen bzw. Sekunden einer Übung anzeigen */
+const fmtSet = (s, info, t) => {
+  const reps = info?.timed ? `${s.reps} s` : null;
+  if (s.kg) return `${fmtNum(s.kg)} × ${reps ?? s.reps}`;
+  return reps ?? `${s.reps} ${t('workout.reps')}`;
+};
+
 function WorkoutList() {
-  const { state, dispatch, exercises } = useStore();
+  const { state, exercises } = useStore();
   const { t, exName, planName } = useI18n();
+  const withUndo = useUndo();
   const [open, setOpen] = useState(null);
+  const [editing, setEditing] = useState(null);
 
   if (state.workouts.length === 0) {
     return <p className="muted">{t('history.empty')}</p>;
   }
 
   return (
-    <ul className="cards cards-grid">
-      {state.workouts.map((w) => {
-        const isOpen = open === w.id;
-        const sets = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
-        return (
-          <li key={w.id} className="card">
-            <button className="card-button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : w.id)}>
-              <span className="eyebrow">{fmtDate(w.startedAt)}</span>
-              <h3>{planName(w.planId, w.name)}</h3>
-              <span className="muted small num">
-                {fmtDuration(new Date(w.finishedAt) - new Date(w.startedAt))} · {t('history.sets', { n: sets })} · {fmtKg(Math.round(workoutVolume(w)))}
-              </span>
-            </button>
-            {isOpen && (
-              <div className="workout-detail">
-                {w.exercises.map((ex, i) => (
-                  <div key={i} className="detail-line">
-                    <strong>{exercises.has(ex.exerciseId) ? exName(exercises.get(ex.exerciseId)) : t('history.deletedExercise')}</strong>
-                    <span className="muted num">{ex.sets.map((s) => (s.kg ? `${fmtNum(s.kg)} × ${s.reps}` : `${s.reps} ${t('workout.reps')}`)).join(' · ')}</span>
+    <>
+      <ul className="cards cards-grid">
+        {state.workouts.map((w) => {
+          const isOpen = open === w.id;
+          const sets = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
+          return (
+            <li key={w.id} className="card">
+              <button className="card-button history-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : w.id)}>
+                <span className="history-text">
+                  <span className="eyebrow">{fmtDate(w.startedAt)}</span>
+                  <h3>{planName(w.planId, w.name)}</h3>
+                  <span className="muted small num">
+                    {fmtDuration(new Date(w.finishedAt) - new Date(w.startedAt))} · {t('history.sets', { n: sets })}
+                  </span>
+                </span>
+                <span className="history-moved">
+                  <span className="moved-value num">{fmtWeight(workoutVolume(w))}</span>
+                  <span className="muted small">{t('workout.moved')}</span>
+                </span>
+              </button>
+              {isOpen && (
+                <div className="workout-detail">
+                  {w.exercises.map((ex, i) => {
+                    const info = exercises.get(ex.exerciseId);
+                    const v = exerciseVolume(ex);
+                    return (
+                      <div key={i} className="detail-line">
+                        <span className="detail-title">
+                          <strong>{info ? exName(info) : t('history.deletedExercise')}</strong>
+                          {v > 0 && <span className="muted small num">{fmtWeight(v)}</span>}
+                        </span>
+                        <span className="muted num">{ex.sets.map((s) => fmtSet(s, info, t)).join(' · ')}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="row-actions">
+                    <button className="btn btn-small" onClick={() => setEditing(w)}>
+                      <Icon name="edit" size={16} /> {t('common.edit')}
+                    </button>
+                    <button className="btn btn-small btn-ghost danger"
+                      onClick={() => withUndo(t('undo.workoutDeleted'), { type: 'history/delete', id: w.id }, ['workouts'])}>
+                      <Icon name="trash" size={16} /> {t('history.delete')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {editing && <WorkoutEditor workout={editing} onClose={() => setEditing(null)} />}
+    </>
+  );
+}
+
+/* ---------- Abgeschlossenes Training nachträglich korrigieren ---------- */
+
+function WorkoutEditor({ workout, onClose }) {
+  const { dispatch, exercises } = useStore();
+  const { t, exName, planName } = useI18n();
+  const withUndo = useUndo();
+  const [draft, setDraft] = useState(() => workout.exercises.map((ex) => ({
+    ...ex, sets: ex.sets.map((s) => ({ kg: s.kg ? String(s.kg).replace('.', ',') : '', reps: String(s.reps) })),
+  })));
+
+  const update = (fn) => setDraft((d) => fn(structuredClone(d)));
+  const setField = (i, j, key, value) => update((d) => { d[i].sets[j][key] = value; return d; });
+  const addSet = (i) => update((d) => { const last = d[i].sets.at(-1); d[i].sets.push({ kg: last?.kg ?? '', reps: last?.reps ?? '' }); return d; });
+  const removeSet = (i, j) => update((d) => { d[i].sets.splice(j, 1); return d; });
+  const removeExercise = (i) => update((d) => { d.splice(i, 1); return d; });
+
+  function save(e) {
+    e.preventDefault();
+    const cleaned = draft
+      .map((ex) => ({
+        ...ex,
+        sets: ex.sets.filter((s) => parseNum(s.reps) > 0).map((s) => ({ kg: parseNum(s.kg), reps: parseNum(s.reps), done: true })),
+      }))
+      .filter((ex) => ex.sets.length > 0);
+    if (cleaned.length === 0) withUndo(t('undo.workoutDeleted'), { type: 'history/delete', id: workout.id }, ['workouts']);
+    else dispatch({ type: 'history/update', workout: { ...workout, exercises: cleaned } });
+    onClose();
+  }
+
+  return (
+    <Sheet title={`${planName(workout.planId, workout.name)} · ${fmtDate(workout.startedAt)}`} onClose={onClose}>
+      <form className="form" onSubmit={save}>
+        {draft.map((ex, i) => {
+          const info = exercises.get(ex.exerciseId);
+          const repsLabel = info?.timed ? t('workout.seconds') : t('workout.reps');
+          return (
+            <section key={i} className="edit-exercise">
+              <header className="exercise-head">
+                <h3>{info ? exName(info) : t('history.deletedExercise')}</h3>
+                <button type="button" className="icon-btn danger" aria-label={t('planEditor.remove')} onClick={() => removeExercise(i)}>
+                  <Icon name="trash" size={18} />
+                </button>
+              </header>
+              <div className="set-table" role="table">
+                <div className="set-row set-row-head" role="row">
+                  <span role="columnheader">{t('workout.set')}</span>
+                  <span role="columnheader">kg</span>
+                  <span role="columnheader">{repsLabel}</span>
+                  <span role="columnheader" className="sr-only">{t('history.removeSet')}</span>
+                </div>
+                {ex.sets.map((s, j) => (
+                  <div key={j} className="set-row" role="row">
+                    <span className="set-no num" role="cell">{j + 1}</span>
+                    <input id={`h-${i}-${j}-kg`} className="num-input" role="cell" inputMode="decimal" placeholder="–" value={s.kg}
+                      aria-label={t('workout.ariaWeight', { n: j + 1 })} onChange={(e) => setField(i, j, 'kg', e.target.value)} />
+                    <input id={`h-${i}-${j}-reps`} className="num-input" role="cell" inputMode="numeric" placeholder="–" value={s.reps}
+                      aria-label={t(info?.timed ? 'workout.ariaSeconds' : 'workout.ariaReps', { n: j + 1 })} onChange={(e) => setField(i, j, 'reps', e.target.value)} />
+                    <button type="button" role="cell" className="icon-btn danger set-remove" aria-label={t('history.removeSet')} onClick={() => removeSet(i, j)}>
+                      <Icon name="close" size={18} />
+                    </button>
                   </div>
                 ))}
-                <ConfirmButton className="btn btn-small btn-ghost danger" confirmLabel={t('history.deleteConfirm')} onConfirm={() => dispatch({ type: 'history/delete', id: w.id })}>
-                  <Icon name="trash" size={16} /> {t('history.delete')}
-                </ConfirmButton>
               </div>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+              <button type="button" className="btn btn-small" onClick={() => addSet(i)}><Icon name="plus" size={16} /> {t('workout.set')}</button>
+            </section>
+          );
+        })}
+        <button type="submit" className="btn btn-primary btn-block"><Icon name="check" size={18} /> {t('history.save')}</button>
+      </form>
+    </Sheet>
   );
 }
 

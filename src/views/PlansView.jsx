@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../state/store.jsx';
 import { Icon } from '../components/Icon.jsx';
-import { ConfirmButton } from '../components/ConfirmButton.jsx';
+import { useUndo } from '../components/Undo.jsx';
 import { ExercisePicker } from '../components/ExercisePicker.jsx';
 import { DragHandle, moveItem, useSortable } from '../components/Sortable.jsx';
 import { uid } from '../utils/training.js';
@@ -13,6 +13,7 @@ let pendingDraft = null;
 export default function PlansView({ goTo }) {
   const { state, dispatch, exercises } = useStore();
   const { t, exName, planName } = useI18n();
+  const withUndo = useUndo();
   const [editing, setEditingState] = useState(() => pendingDraft); // Plan-Entwurf oder null
   const setEditing = (draft) => { pendingDraft = draft; setEditingState(draft); };
   const sortable = useSortable((from, to) => dispatch({ type: 'plan/move', from, to }));
@@ -28,7 +29,7 @@ export default function PlansView({ goTo }) {
           setEditing(null);
         }}
         onDelete={() => {
-          dispatch({ type: 'plan/delete', id: editing.id });
+          withUndo(t('undo.planDeleted', { name: editing.name || t('planEditor.new') }), { type: 'plan/delete', id: editing.id }, ['plans']);
           setEditing(null);
         }}
       />
@@ -56,7 +57,7 @@ export default function PlansView({ goTo }) {
                 {plan.exercises.map((pe, i) => (
                   <li key={i}>
                     <span>{exName(exercises.get(pe.exerciseId))}</span>
-                    <span className="num muted">{pe.sets} × {pe.reps}</span>
+                    <span className="num muted">{pe.sets} × {pe.reps}{exercises.get(pe.exerciseId)?.timed ? ' s' : ''}</span>
                   </li>
                 ))}
               </ol>
@@ -131,7 +132,7 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
               </div>
               <div className="steppers">
                 <Stepper id={`plan-${i}-sets`} label={t('planEditor.sets')} value={pe.sets} min={1} max={10} onChange={(v) => setLine(i, { sets: v })} />
-                <Stepper id={`plan-${i}-reps`} label={t('workout.reps')} value={pe.reps} min={1} max={100} onChange={(v) => setLine(i, { reps: v })} />
+                <Stepper id={`plan-${i}-reps`} label={exercises.get(pe.exerciseId)?.timed ? t('workout.seconds') : t('workout.reps')} value={pe.reps} min={1} max={exercises.get(pe.exerciseId)?.timed ? 600 : 100} onChange={(v) => setLine(i, { reps: v })} />
               </div>
             </li>
           ))}
@@ -147,9 +148,9 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
         <button type="submit" className="btn btn-primary btn-block"><Icon name="check" size={18} /> {t('planEditor.save')}</button>
         <button type="button" className="btn btn-ghost btn-block" onClick={onCancel}>{t('common.cancel')}</button>
         {!isNew && (
-          <ConfirmButton className="btn btn-ghost danger btn-block" confirmLabel={t('planEditor.deleteConfirm')} onConfirm={onDelete}>
+          <button type="button" className="btn btn-ghost danger btn-block" onClick={onDelete}>
             {t('planEditor.delete')}
-          </ConfirmButton>
+          </button>
         )}
       </div>
 

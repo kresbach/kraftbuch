@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon.jsx';
 import { useI18n } from '../i18n/index.jsx';
+import { beep } from '../utils/sound.js';
 
 // Pausen-Countdown nach einem erledigten Satz.
-export function RestTimer({ endsAt, total, onChange }) {
+export function RestTimer({ endsAt, total, onChange, sound = true }) {
   const { t } = useI18n();
   const [now, setNow] = useState(Date.now());
 
@@ -21,6 +22,7 @@ export function RestTimer({ endsAt, total, onChange }) {
     else if (wasRunning.current) {
       wasRunning.current = false;
       navigator.vibrate?.([200, 100, 200]);
+      if (sound) beep();
     }
   }, [left === 0]); // eslint-disable-line react-hooks/exhaustive-deps
 

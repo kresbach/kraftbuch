@@ -70,8 +70,13 @@ export function reducer(state, action) {
     // ---- Übungen ----
     case 'exercise/add':
       return { ...state, customExercises: [...state.customExercises, { ...action.exercise, id: uid(), custom: true }] };
-    case 'exercise/delete':
-      return { ...state, customExercises: state.customExercises.filter((e) => e.id !== action.id) };
+    case 'exercise/delete': {
+      // Auch aus den Plänen entfernen – sonst stünde dort „Unbekannte Übung“
+      const plans = state.plans.map((p) => (p.exercises.some((pe) => pe.exerciseId === action.id)
+        ? { ...p, exercises: p.exercises.filter((pe) => pe.exerciseId !== action.id) }
+        : p));
+      return { ...state, plans, customExercises: state.customExercises.filter((e) => e.id !== action.id) };
+    }
 
     // ---- Pläne ----
     case 'plan/save': {
@@ -163,6 +168,10 @@ export function reducer(state, action) {
     // ---- Verlauf & Daten ----
     case 'history/delete':
       return { ...state, workouts: state.workouts.filter((w) => w.id !== action.id) };
+    case 'history/update':
+      return { ...state, workouts: state.workouts.map((w) => (w.id === action.workout.id ? action.workout : w)) };
+    case 'undo/restore': // Zustand vor einer Löschung wiederherstellen (nur die betroffenen Teile)
+      return { ...state, ...action.snapshot };
     case 'settings/update':
       return { ...state, settings: { ...state.settings, ...action.patch } };
     case 'data/import': // aus Datei: gilt als neue Änderung

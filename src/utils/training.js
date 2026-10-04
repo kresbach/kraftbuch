@@ -16,8 +16,10 @@ export const parseNum = (v) => Number(String(v ?? '').replace(',', '.')) || 0;
 /** Bewegtes Gewicht eines Satzes (kg × Wdh). */
 export const setVolume = (s) => parseNum(s.kg) * parseNum(s.reps);
 
-export const workoutVolume = (w) =>
-  w.exercises.reduce((sum, ex) => sum + ex.sets.filter((s) => s.done).reduce((a, s) => a + setVolume(s), 0), 0);
+/** Bewegtes Gewicht einer Übung im Training (nur erledigte Sätze). */
+export const exerciseVolume = (ex) => ex.sets.filter((s) => s.done).reduce((a, s) => a + setVolume(s), 0);
+
+export const workoutVolume = (w) => w.exercises.reduce((sum, ex) => sum + exerciseVolume(ex), 0);
 
 export const doneSets = (ex) => ex.sets.filter((s) => s.done && parseNum(s.reps) > 0);
 
@@ -60,6 +62,8 @@ export function setFormatLocale(next) {
 
 export const fmtNum = (n) => nf.format(n);
 export const fmtKg = (n) => `${nf.format(n)} kg`;
+/** Bewegtes Gesamtgewicht kompakt: 980 kg, 4.250 kg, ab 10 t in Tonnen (12,5 t). */
+export const fmtWeight = (kg) => (kg >= 10000 ? `${nf.format(Math.round(kg / 100) / 10)} t` : `${nf.format(Math.round(kg))} kg`);
 
 export const fmtDate = (iso) =>
   new Date(iso).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -78,6 +82,7 @@ export function fmtClock(ms) {
 }
 
 export function fmtDuration(ms) {
+  if (ms < 60000) return '< 1 min';
   const min = Math.round(ms / 60000);
   if (min < 60) return `${min} min`;
   return `${Math.floor(min / 60)} h ${min % 60} min`;

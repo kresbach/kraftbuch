@@ -1,11 +1,14 @@
 // Standard-Übungen, die jede Installation mitbringt – mit deutschem und englischem Namen.
 // `equipment` bestimmt Anzeige und Filter; `type` steuert die Eingabe:
 // 'weight' = Gewicht × Wiederholungen, 'bodyweight' = Wiederholungen (optional Zusatzgewicht).
+// `timed`: statt Wiederholungen wird die Dauer in Sekunden eingetragen (z. B. Unterarmstütz).
 // Namen enthalten das Gerät in Klammern, damit Varianten unterscheidbar und auffindbar sind.
 // IDs nie ändern – Pläne und Verlauf verweisen darauf.
 
 export const MUSCLE_GROUPS = ['Beine', 'Brust', 'Rücken', 'Schultern', 'Arme', 'Rumpf'];
 export const EQUIPMENT = ['Maschine', 'Kabelzug', 'Langhantel', 'Kurzhantel', 'Kettlebell', 'Körpergewicht'];
+
+const TIMED = new Set(['plank', 'side-plank']);
 
 const ex = (id, name, en, group, equipment) => ({
   id,
@@ -14,6 +17,7 @@ const ex = (id, name, en, group, equipment) => ({
   group,
   equipment,
   type: equipment === 'Körpergewicht' ? 'bodyweight' : 'weight',
+  ...(TIMED.has(id) && { timed: true }),
 });
 
 export const DEFAULT_EXERCISES = [

@@ -1,6 +1,6 @@
 // Schnelltest: node src/utils/training.test.mjs
 import assert from 'node:assert/strict';
-import { estimate1RM, fmtClock, platesPerSide, startOfWeek } from './training.js';
+import { estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
 
 assert.equal(estimate1RM(100, 1), 100);
 assert.equal(Math.round(estimate1RM(100, 5)), 117);
@@ -15,4 +15,10 @@ assert.equal(startOfWeek(new Date('2026-10-04T12:00:00')).getDay(), 1); // Sonnt
 assert.equal(fmtClock(425000), '7:05');
 assert.equal(fmtClock(4025000), '1:07:05');
 assert.equal(fmtClock(-5), '0:00');
+assert.equal(fmtWeight(980), '980 kg');
+assert.equal(fmtWeight(4250), '4.250 kg');
+assert.equal(fmtWeight(12480), '12,5 t');
+assert.equal(fmtDuration(30000), '< 1 min');
+assert.equal(fmtDuration(42 * 60000), '42 min');
+assert.equal(workoutVolume({ exercises: [{ sets: [{ kg: '60', reps: '8', done: true }, { kg: 60, reps: 8, done: false }] }, { sets: [{ kg: '2,5', reps: 10, done: true }] }] }), 505);
 console.log('training.js: alle Tests bestanden');

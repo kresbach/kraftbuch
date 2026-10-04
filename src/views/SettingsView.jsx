@@ -51,6 +51,19 @@ export default function SettingsView() {
       </fieldset>
 
       <fieldset className="field">
+        <legend className="field-label">{t('settings.restSound')}</legend>
+        <div className="segmented">
+          {[true, false].map((on) => (
+            <button key={String(on)} type="button" className={(state.settings.restSound !== false) === on ? 'is-on' : ''}
+              onClick={() => dispatch({ type: 'settings/update', patch: { restSound: on } })}>
+              {t(on ? 'settings.on' : 'settings.off')}
+            </button>
+          ))}
+        </div>
+        <p className="muted small">{t('settings.restSoundHint')}</p>
+      </fieldset>
+
+      <fieldset className="field">
         <legend className="field-label">{t('settings.bar')}</legend>
         <div className="segmented">
           {[20, 15, 10].map((kg) => (
