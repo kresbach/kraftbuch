@@ -17,6 +17,7 @@ export default function ExercisesView() {
   const withUndo = useUndo();
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(null); // eigene Übung, die bearbeitet wird
   const [equipment, setEquipment] = useState(null);
   const searchBar = useRef(null);
 
@@ -86,6 +87,11 @@ export default function ExercisesView() {
                       )}
                     </div>
                     {e.custom && (
+                      <button className="icon-btn" aria-label={t('exercises.edit', { name: exName(e) })} onClick={() => setEditing(e)}>
+                        <Icon name="edit" size={18} />
+                      </button>
+                    )}
+                    {e.custom && (
                       <button className="icon-btn quiet-danger" aria-label={t('exercises.delete')} onClick={() => {
                         const inPlans = state.plans.filter((p) => p.exercises.some((pe) => pe.exerciseId === e.id)).length;
                         withUndo(t(inPlans ? 'undo.exerciseDeletedPlans' : 'undo.exerciseDeleted', { name: exName(e), n: inPlans }),
@@ -108,34 +114,39 @@ export default function ExercisesView() {
       )}
 
       {adding && <AddExercise initialName={query} onClose={() => setAdding(false)} onSave={(exercise) => { dispatch({ type: 'exercise/add', exercise }); setAdding(false); }} />}
+      {editing && (
+        <AddExercise existing={editing} onClose={() => setEditing(null)}
+          onSave={(exercise) => { dispatch({ type: 'exercise/update', exercise: { ...editing, ...exercise } }); setEditing(null); }} />
+      )}
     </>
   );
 }
 
-function AddExercise({ initialName, onSave, onClose }) {
+/** Eigene Übung anlegen oder – mit `existing` – bearbeiten. */
+function AddExercise({ initialName = '', existing, onSave, onClose }) {
   const { t, group: groupName, equip, exName } = useI18n();
   const { exercises } = useStore();
-  const [name, setName] = useState(initialName);
-  const [group, setGroup] = useState(MUSCLE_GROUPS[0]);
-  const [equipment, setEquipment] = useState('Maschine');
+  const [name, setName] = useState(existing?.name ?? initialName);
+  const [group, setGroup] = useState(existing?.group ?? MUSCLE_GROUPS[0]);
+  const [equipment, setEquipment] = useState(existing?.equipment ?? 'Maschine');
   const [error, setError] = useState('');
 
   return (
-    <Sheet title={t('addExercise.title')} onClose={onClose}>
+    <Sheet title={t(existing ? 'addExercise.editTitle' : 'addExercise.title')} onClose={onClose}>
       <form
         className="form"
         onSubmit={(e) => {
           e.preventDefault();
           if (!name.trim()) return setError(t('addExercise.nameMissing'));
           const lower = name.trim().toLowerCase();
-          const twin = [...exercises.values()].find((x) => [x.name, x.en, exName(x)].some((n) => n?.trim().toLowerCase() === lower));
+          const twin = [...exercises.values()].find((x) => x.id !== existing?.id && [x.name, x.en, exName(x)].some((n) => n?.trim().toLowerCase() === lower));
           if (twin) return setError(t('addExercise.duplicate', { name: exName(twin) }));
           onSave({ name: name.trim(), group, equipment, type: equipment === 'Körpergewicht' ? 'bodyweight' : 'weight' });
         }}
       >
         <label className="field">
           <span className="field-label">{t('addExercise.name')}</span>
-          <input id="new-exercise-name" className="text-input" value={name} autoFocus placeholder={t('addExercise.placeholder')}
+          <input id="new-exercise-name" className="text-input" value={name} autoFocus={!existing} placeholder={t('addExercise.placeholder')}
             onChange={(e) => { setName(e.target.value); setError(''); }} />
         </label>
         <fieldset className="field">

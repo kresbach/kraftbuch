@@ -49,4 +49,16 @@ assert.equal(sets(t), 'x x x');
   assert.deepEqual(normalizeData({ updatedAt: 5 }), {}); // nur vorhandene Teile
   assert.equal(normalizeData({ activeWorkout: 7 }).activeWorkout, null);
 }
+// Eigene Übung bearbeiten: ID bleibt, Name/Gruppe ändern sich, andere Übungen unberührt
+{
+  let st = reducer(initialState, { type: 'exercise/add', exercise: { name: 'Rudern X', group: 'Rücken', equipment: 'Maschine', type: 'weight' } });
+  st = reducer(st, { type: 'exercise/add', exercise: { name: 'Andere', group: 'Beine', equipment: 'Maschine', type: 'weight' } });
+  const id = st.customExercises[0].id;
+  st = reducer(st, { type: 'exercise/update', exercise: { id, name: 'Rudern sitzend', group: 'Rücken', equipment: 'Kabelzug', type: 'weight' } });
+  assert.equal(st.customExercises[0].id, id);
+  assert.equal(st.customExercises[0].name, 'Rudern sitzend');
+  assert.equal(st.customExercises[0].equipment, 'Kabelzug');
+  assert.equal(st.customExercises[0].custom, true);
+  assert.equal(st.customExercises[1].name, 'Andere');
+}
 console.log('reducer.js: alle Tests bestanden');

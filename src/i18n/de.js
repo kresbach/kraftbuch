@@ -105,6 +105,8 @@ export default {
     'picker.title': 'Übung hinzufügen',
     'picker.empty': 'Keine Übung gefunden. Unter „Übungen“ kannst du eigene anlegen.',
     'addExercise.title': 'Eigene Übung',
+    'addExercise.editTitle': 'Übung bearbeiten',
+    'exercises.edit': '{name} bearbeiten',
     'addExercise.name': 'Name',
     'addExercise.placeholder': 'z. B. Beinpresse einbeinig',
     'addExercise.nameMissing': 'Bitte gib einen Namen ein.',

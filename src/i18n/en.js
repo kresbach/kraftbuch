@@ -105,6 +105,8 @@ export default {
     'picker.title': 'Add exercise',
     'picker.empty': 'No exercise found. You can add your own under “Exercises”.',
     'addExercise.title': 'Custom exercise',
+    'addExercise.editTitle': 'Edit exercise',
+    'exercises.edit': 'Edit {name}',
     'addExercise.name': 'Name',
     'addExercise.placeholder': 'e.g. Single-leg leg press',
     'addExercise.nameMissing': 'Please enter a name.',

@@ -114,6 +114,8 @@ export function reducer(state, action) {
     // ---- Übungen ----
     case 'exercise/add':
       return { ...state, customExercises: [...state.customExercises, { ...action.exercise, id: uid(), custom: true }] };
+    case 'exercise/update': // eigene Übung ändern – Pläne und Verlauf verweisen per ID, bleiben also gültig
+      return { ...state, customExercises: state.customExercises.map((e) => (e.id === action.exercise.id ? { ...e, ...action.exercise, custom: true } : e)) };
     case 'exercise/delete': {
       // Auch aus den Plänen entfernen – sonst stünde dort „Unbekannte Übung“
       const plans = state.plans.map((p) => (p.exercises.some((pe) => pe.exerciseId === action.id)
