@@ -1,6 +1,6 @@
 // Schnelltest: node src/utils/training.test.mjs
 import assert from 'node:assert/strict';
-import { weekDays, weekStreak, bestsByExercise, recordCounts, cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
+import { suggestNext, setUnit, fmtWeight as fw, fmtKg as fk, inputToKg, kgToInput, platesPerSide as pps, PLATES_LB, weekDays, weekStreak, bestsByExercise, recordCounts, cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
 
 assert.equal(estimate1RM(100, 1), 100);
 assert.equal(Math.round(estimate1RM(100, 5)), 117);
@@ -47,4 +47,24 @@ assert.equal(workoutVolume({ exercises: [{ exerciseId: 'plank', sets: [{ kg: 10,
   assert.equal(weekStreak(ws.slice(3), now), 2); // diese Woche noch leer → zählt ab letzter Woche
   assert.equal(weekStreak([], now), 0);
 }
+// Einheit Pfund: Anzeige umgerechnet, Speicherung in kg
+setUnit('lb');
+assert.equal(fk(100), '220,5 lb');
+assert.equal(fw(1000), '2.205 lb');
+assert.equal(inputToKg('225'), '102.058');
+assert.equal(kgToInput('102.058'), '225');
+assert.equal(kgToInput(''), '');
+assert.deepEqual(pps(225, 45, PLATES_LB).map((p) => p.kg), [45, 45]);
+assert.deepEqual(pps(205, 45, PLATES_LB).map((p) => p.kg), [45, 35]);
+setUnit('kg');
+assert.equal(fk(62.5), '62,5 kg');
+assert.equal(inputToKg('62,5'), '62,5');
+// Steigerungs-Vorschlag
+assert.deepEqual(suggestNext([{ kg: 100, reps: 5 }, { kg: 100, reps: 5 }], { target: 5 }), { kg: 102.5 });
+assert.equal(suggestNext([{ kg: 100, reps: 5 }, { kg: 100, reps: 4 }], { target: 5 }), null); // nicht geschafft
+assert.deepEqual(suggestNext([{ kg: 20, reps: 10 }], { equipment: 'Kurzhantel' }), { kg: 22 });
+assert.deepEqual(suggestNext([{ kg: 0, reps: 8 }, { kg: 0, reps: 8 }], {}), { reps: 9 });
+assert.deepEqual(suggestNext([{ kg: 0, reps: 45 }], { timed: true }), { reps: 50 });
+assert.equal(suggestNext(null), null);
+setUnit('lb'); assert.deepEqual(suggestNext([{ kg: 100, reps: 5 }], {}), { kg: 102.268 }); setUnit('kg');
 console.log('training.js: alle Tests bestanden');

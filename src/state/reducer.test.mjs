@@ -61,4 +61,28 @@ assert.equal(sets(t), 'x x x');
   assert.equal(st.customExercises[0].custom, true);
   assert.equal(st.customExercises[1].name, 'Andere');
 }
+// Training wiederholen, Plan duplizieren, Favoriten, Pause je Übung
+{
+  let st = { ...initialState, workouts: [{ id: 'w1', planId: 'plan-ganzkoerper-a', name: 'Ganzkörper A', startedAt: '2026-10-01T10:00:00Z', finishedAt: '2026-10-01T11:00:00Z', exercises: [{ exerciseId: 'kniebeuge', target: 5, sets: [{ kg: 100, reps: 5, done: true }, { kg: 100, reps: 5, done: true }] }] }] };
+  st = reducer(st, { type: 'workout/repeat', workoutId: 'w1' });
+  assert.equal(st.activeWorkout.planId, 'plan-ganzkoerper-a');
+  assert.deepEqual(st.activeWorkout.exercises[0].sets, [{ kg: 100, reps: 5, done: false }, { kg: 100, reps: 5, done: false }]);
+  assert.equal(st.activeWorkout.exercises[0].target, 5);
+  st = reducer(st, { type: 'workout/applySuggestion', exIndex: 0, patch: { kg: 102.5 } });
+  assert.equal(st.activeWorkout.exercises[0].sets[1].kg, 102.5);
+  const n = initialState.plans.length;
+  st = reducer(st, { type: 'plan/duplicate', id: initialState.plans[0].id, name: 'Kopie' });
+  assert.equal(st.plans.length, n + 1);
+  assert.equal(st.plans[1].name, 'Kopie');
+  assert.notEqual(st.plans[1].id, st.plans[0].id);
+  assert.deepEqual(st.plans[1].exercises, st.plans[0].exercises);
+  st = reducer(st, { type: 'favorite/toggle', id: 'kniebeuge' });
+  assert.deepEqual(st.settings.favorites, ['kniebeuge']);
+  st = reducer(st, { type: 'favorite/toggle', id: 'kniebeuge' });
+  assert.deepEqual(st.settings.favorites, []);
+  st = reducer(st, { type: 'exercise/rest', id: 'kniebeuge', seconds: 180 });
+  assert.equal(st.settings.restByExercise.kniebeuge, 180);
+  st = reducer(st, { type: 'exercise/rest', id: 'kniebeuge', seconds: null });
+  assert.equal('kniebeuge' in st.settings.restByExercise, false);
+}
 console.log('reducer.js: alle Tests bestanden');

@@ -100,6 +100,7 @@ function newWorkoutExercise(state, exerciseId, targetSets = 3, targetReps = '') 
   const reps = targetReps || (last ? last[0].reps : '');
   return {
     exerciseId,
+    ...(targetReps ? { target: Number(targetReps) } : {}), // Ziel-Wdh aus dem Plan (für den Steigerungs-Vorschlag)
     sets: Array.from({ length: targetSets }, () => ({ kg, reps, done: false })),
   };
 }
@@ -131,6 +132,23 @@ export function reducer(state, action) {
         ? state.plans.map((p) => (p.id === action.plan.id ? action.plan : p))
         : [...state.plans, { ...action.plan, id: action.plan.id || uid() }];
       return { ...state, plans };
+    }
+    case 'plan/duplicate': { // Kopie direkt hinter dem Original
+      const i = state.plans.findIndex((p) => p.id === action.id);
+      if (i < 0) return state;
+      const copy = { ...structuredClone(state.plans[i]), id: uid(), name: action.name };
+      return { ...state, plans: [...state.plans.slice(0, i + 1), copy, ...state.plans.slice(i + 1)] };
+    }
+    case 'favorite/toggle': {
+      const favs = state.settings.favorites ?? [];
+      const favorites = favs.includes(action.id) ? favs.filter((f) => f !== action.id) : [...favs, action.id];
+      return { ...state, settings: { ...state.settings, favorites } };
+    }
+    case 'exercise/rest': { // eigene Pausenzeit je Übung (null = Standard aus den Einstellungen)
+      const restByExercise = { ...(state.settings.restByExercise ?? {}) };
+      if (action.seconds == null) delete restByExercise[action.id];
+      else restByExercise[action.id] = action.seconds;
+      return { ...state, settings: { ...state.settings, restByExercise } };
     }
     case 'plan/delete':
       return { ...state, plans: state.plans.filter((p) => p.id !== action.id) };
@@ -216,7 +234,31 @@ export function reducer(state, action) {
       if (action.exIndex == null) return { ...state, activeWorkout: { ...state.activeWorkout, note: action.note } };
       return updateWorkoutExercise(state, action.exIndex, (ex) => ({ ...ex, note: action.note }));
     case 'workout/rest': // Pausen-Ende im Training speichern – übersteht Tab-Wechsel und Neuladen
-      return { ...state, activeWorkout: { ...state.activeWorkout, restEndsAt: action.endsAt } };
+      return { ...state, activeWorkout: { ...state.activeWorkout, restEndsAt: action.endsAt, ...(action.total ? { restTotal: action.total } : {}) } };
+    case 'workout/applySuggestion': // Vorschlag (mehr Gewicht bzw. Wdh) in alle offenen Sätze übernehmen
+      return updateWorkoutExercise(state, action.exIndex, (ex) => ({
+        ...ex,
+        sets: ex.sets.map((s) => (s.done ? s : { ...s, ...action.patch })),
+      }));
+    case 'workout/repeat': { // abgeschlossenes Training als neues Training mit denselben Übungen und Werten starten
+      const src = state.workouts.find((w) => w.id === action.workoutId);
+      if (!src || state.activeWorkout) return state;
+      const plan = state.plans.find((p) => p.id === src.planId);
+      return {
+        ...state,
+        activeWorkout: {
+          id: uid(),
+          planId: plan ? src.planId : null,
+          name: plan ? plan.name : src.name,
+          startedAt: new Date().toISOString(),
+          exercises: src.exercises.map((ex) => ({
+            exerciseId: ex.exerciseId,
+            ...(ex.target ? { target: ex.target } : {}),
+            sets: ex.sets.map((s) => ({ kg: s.kg || '', reps: s.reps || '', done: false })),
+          })),
+        },
+      };
+    }
     case 'workout/discard':
       return { ...state, activeWorkout: null };
 

@@ -30,6 +30,27 @@ export const exerciseVolume = (ex) => (TIMED_IDS.has(ex.exerciseId) ? 0
 
 export const workoutVolume = (w) => w.exercises.reduce((sum, ex) => sum + exerciseVolume(ex), 0);
 
+// ---- Steigerungs-Vorschlag ----
+// Wurden beim letzten Mal in allen Sätzen mit dem höchsten Gewicht die Ziel-Wiederholungen geschafft,
+// gibt es etwas mehr Gewicht. Ohne Gewicht: eine Wiederholung bzw. 5 Sekunden mehr.
+const SMALL_STEP = new Set(['Kurzhantel', 'Kettlebell']);
+export function suggestNext(lastSets, { target, timed, equipment } = {}) {
+  if (!lastSets?.length) return null;
+  const sets = lastSets.map((s) => ({ kg: parseNum(s.kg), reps: parseNum(s.reps) }));
+  const maxKg = Math.max(...sets.map((s) => s.kg));
+  if (maxKg > 0) {
+    const top = sets.filter((s) => s.kg === maxKg);
+    const goal = target || top[0].reps;
+    if (!goal || top.some((s) => s.reps < goal)) return null;
+    const step = unit === 'lb' ? 5 * LB : SMALL_STEP.has(equipment) ? 2 : 2.5;
+    return { kg: Math.round((maxKg + step) * 1000) / 1000 };
+  }
+  const best = Math.max(...sets.map((s) => s.reps));
+  const goal = target || sets[0].reps;
+  if (!best || sets.some((s) => s.reps < goal)) return null;
+  return { reps: best + (timed ? 5 : 1) };
+}
+
 // ---- Persönliche Rekorde ----
 // Mit Gewicht zählt das geschätzte 1RM, ohne Gewicht die Wiederholungen (bzw. Sekunden).
 
@@ -94,13 +115,26 @@ export const PLATES = [
 
 const MAX_PLATES_PER_SIDE = 12; // mehr passt auf keine Hantelstange
 
-/** Scheiben pro Seite für ein Zielgewicht bei gegebener Stange; null wenn nicht ladbar. */
-export function platesPerSide(total, bar = 20) {
+// Scheiben in Pfund (übliche US-Scheiben)
+export const PLATES_LB = [
+  { kg: 45, color: '#2f62d6' },
+  { kg: 35, color: '#e8b923' },
+  { kg: 25, color: '#2f9e5a' },
+  { kg: 10, color: '#e9ecf2' },
+  { kg: 5, color: '#9aa3b2' },
+  { kg: 2.5, color: '#6b7385' },
+];
+/** Stangengewicht in lb zur kg-Einstellung (20 kg ≈ 45 lb usw.) */
+export const BAR_LB = { 20: 45, 15: 35, 10: 25 };
+
+/** Scheiben pro Seite für ein Zielgewicht bei gegebener Stange; null wenn nicht ladbar.
+ *  Mit `plates = PLATES_LB` rechnet die Funktion in Pfund. */
+export function platesPerSide(total, bar = 20, plates = PLATES) {
   let rest = (total - bar) / 2;
   // Unrealistische Eingaben (Vertipper wie 100000) nicht durchrechnen – das fror die App ein
-  if (!(rest > 0) || rest > PLATES[0].kg * MAX_PLATES_PER_SIDE) return null;
+  if (!(rest > 0) || rest > plates[0].kg * MAX_PLATES_PER_SIDE) return null;
   const result = [];
-  for (const p of PLATES) {
+  for (const p of plates) {
     while (rest >= p.kg - 1e-9) {
       result.push(p);
       rest -= p.kg;
@@ -119,9 +153,39 @@ export function setFormatLocale(next) {
 }
 
 export const fmtNum = (n) => nf.format(n);
-export const fmtKg = (n) => `${nf.format(n)} kg`;
-/** Bewegtes Gesamtgewicht kompakt: 980 kg, 4.250 kg, ab 10 t in Tonnen (12,5 t). */
-export const fmtWeight = (kg) => (kg >= 10000 ? `${nf.format(Math.round(kg / 100) / 10)} t` : `${nf.format(Math.round(kg))} kg`);
+
+// ---- Gewichtseinheit ----
+// Gespeichert wird immer in kg; angezeigt und eingegeben in der gewählten Einheit (kg oder lb).
+export const LB = 0.45359237;
+let unit = 'kg';
+export function setUnit(next) { unit = next === 'lb' ? 'lb' : 'kg'; }
+export const getUnit = () => unit;
+/** kg → Anzeigeeinheit */
+export const toUnit = (kg) => (unit === 'lb' ? kg / LB : kg);
+/** Anzeigeeinheit → kg */
+export const fromUnit = (v) => (unit === 'lb' ? v * LB : v);
+/** Gewicht als Zahl in der Anzeigeeinheit, ohne Einheit: „62,5“ */
+export const fmtW = (kg) => nf.format(Math.round(toUnit(kg) * 10) / 10);
+/** „62,5 kg“ bzw. „137,8 lb“ */
+export const fmtKg = (kg) => `${fmtW(kg)} ${unit}`;
+/** Bewegtes Gesamtgewicht kompakt: 980 kg, 4.250 kg, ab 10 t in Tonnen (12,5 t); in lb ab 100.000 als „125k lb“. */
+export function fmtWeight(kg) {
+  if (unit === 'lb') {
+    const lb = toUnit(kg);
+    return lb >= 100000 ? `${nf.format(Math.round(lb / 100) / 10)}k lb` : `${nf.format(Math.round(lb))} lb`;
+  }
+  return kg >= 10000 ? `${nf.format(Math.round(kg / 100) / 10)} t` : `${nf.format(Math.round(kg))} kg`;
+}
+/** Wert für ein Eingabefeld (Dezimalkomma je nach Sprache, ohne Tausenderpunkte) */
+export const fmtInput = (n) => new Intl.NumberFormat(locale, { maximumFractionDigits: 2, useGrouping: false }).format(n);
+/** Eingabe in der Anzeigeeinheit → gespeicherter kg-Text */
+export const inputToKg = (text) => {
+  if (unit === 'kg' || text === '') return text;
+  const kg = fromUnit(parseNum(text));
+  return String(Math.round(kg * 1000) / 1000);
+};
+/** gespeicherter kg-Text → Text fürs Eingabefeld */
+export const kgToInput = (kgText) => (unit === 'kg' || kgText === '' || kgText == null ? kgText ?? '' : fmtInput(Math.round(toUnit(parseNum(kgText)) * 10) / 10));
 
 /** „So., 4. Okt.“ – das Jahr nur, wenn es nicht das aktuelle ist. */
 export const fmtDate = (iso) => {
@@ -131,6 +195,11 @@ export const fmtDate = (iso) => {
 };
 /** Kurzer Wochentag ohne Punkt: „Mo“, „Mon“ */
 export const fmtWeekday = (d) => d.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '').slice(0, 3);
+/** Wochentage eines Plans kurz: [1, 4] → „Mo · Do“ (1 = Montag) */
+export function fmtPlanDays(days) {
+  const monday = startOfWeek();
+  return [...days].sort((a, b) => a - b).map((d) => { const x = new Date(monday); x.setDate(monday.getDate() + d - 1); return fmtWeekday(x); }).join(' · ');
+}
 /** „September 2026“ */
 export const fmtMonth = (d) => d.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 export const fmtShortDate = (iso) =>

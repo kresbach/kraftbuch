@@ -1,4 +1,5 @@
 import { useStore } from '../state/store.jsx';
+import { BAR_LB } from '../utils/training.js';
 import { CloudSettings } from '../components/CloudSettings.jsx';
 import { LANGUAGES, deviceLanguage, useI18n } from '../i18n/index.jsx';
 
@@ -39,6 +40,19 @@ export default function SettingsView() {
       </fieldset>
 
       <fieldset className="field">
+        <legend className="field-label">{t('settings.unit')}</legend>
+        <div className="segmented">
+          {['kg', 'lb'].map((u) => (
+            <button key={u} type="button" className={(state.settings.unit ?? 'kg') === u ? 'is-on' : ''}
+              onClick={() => dispatch({ type: 'settings/update', patch: { unit: u } })}>
+              {t(`settings.unit.${u}`)}
+            </button>
+          ))}
+        </div>
+        <p className="muted small">{t('settings.unitHint')}</p>
+      </fieldset>
+
+      <fieldset className="field">
         <legend className="field-label">{t('settings.rest')}</legend>
         <div className="segmented">
           {[0, 60, 90, 120, 180].map((s) => (
@@ -72,7 +86,7 @@ export default function SettingsView() {
           {[20, 15, 10].map((kg) => (
             <button key={kg} type="button" className={state.settings.barKg === kg ? 'is-on' : ''}
               onClick={() => dispatch({ type: 'settings/update', patch: { barKg: kg } })}>
-              {kg} kg
+              {state.settings.unit === 'lb' ? `${BAR_LB[kg]} lb` : `${kg} kg`}
             </button>
           ))}
         </div>

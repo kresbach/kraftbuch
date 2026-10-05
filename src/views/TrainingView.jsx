@@ -8,10 +8,12 @@ import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
 import { CloudBanner } from '../components/CloudSettings.jsx';
 import { DragHandle, useSortable } from '../components/Sortable.jsx';
-import { bestsByExercise, cleanKg, cleanReps, exerciseVolume, isRecord, recordCounts, recordSet, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeekday, fmtWeight, parseNum, startOfWeek, weekDays, weekStreak, workoutVolume } from '../utils/training.js';
+import { bestsByExercise, cleanReps, fmtKg, fmtW, fmtInput, fmtPlanDays, getUnit, suggestNext, exerciseVolume, isRecord, recordCounts, recordSet, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeekday, fmtWeight, parseNum, startOfWeek, weekDays, weekStreak, workoutVolume } from '../utils/training.js';
 import { unlockSound } from '../utils/sound.js';
 import { useUndo } from '../components/Undo.jsx';
 import { ExLabel } from '../components/ExLabel.jsx';
+import { WeightInput } from '../components/WeightInput.jsx';
+import { ShareWorkout } from '../components/ShareWorkout.jsx';
 import { EmptyState } from '../components/EmptyState.jsx';
 import { useI18n } from '../i18n/index.jsx';
 
@@ -37,6 +39,10 @@ function StartScreen({ goTo }) {
   const nextPlanId = lastPlanIndex >= 0 && state.plans.length > 1
     ? state.plans[(lastPlanIndex + 1) % state.plans.length].id
     : null;
+  // Pläne mit festen Trainingstagen: heute fällige Pläne werden markiert (vor „Als Nächstes“)
+  const today = ((new Date().getDay() + 6) % 7) + 1; // 1 = Montag … 7 = Sonntag
+  const trainedToday = days.find((d) => d.isToday)?.count > 0;
+  const dueToday = new Set(trainedToday ? [] : state.plans.filter((p) => p.days?.includes(today)).map((p) => p.id));
 
   return (
     <div className="narrow-page">
@@ -79,12 +85,18 @@ function StartScreen({ goTo }) {
         )}
         <ul className="cards">
           {state.plans.map((plan, index) => {
-            const isNext = plan.id === nextPlanId;
+            const isToday = dueToday.has(plan.id);
+            const isNext = !dueToday.size && plan.id === nextPlanId;
             return (
               <li key={plan.id} ref={sortable.itemRef(index)} className="card plan-card">
                 <DragHandle className="drag-handle card-corner" label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
                 <div className="plan-card-text">
-                  <h3>{planName(plan.id, plan.name)} {isNext && <span className="pill">{t('training.next')}</span>}</h3>
+                  <h3>
+                    {planName(plan.id, plan.name)}
+                    {isToday && <> <span className="pill pill-today">{t('training.today')}</span></>}
+                    {isNext && <> <span className="pill">{t('training.next')}</span></>}
+                  </h3>
+                  {plan.days?.length > 0 && <p className="plan-days small">{fmtPlanDays(plan.days)}</p>}
                   <p className="muted small">
                     {plan.exercises.map((pe) => exParts(exercises.get(pe.exerciseId)).name).join(' · ') || t('plans.noExercises')}
                   </p>
@@ -139,7 +151,9 @@ function ActiveWorkout() {
     if (!set.done && state.settings.restSound !== false) unlockSound(); // Ton am Pausenende erlauben (iOS)
     dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { done: !set.done } });
     if (isRecord({ ...set, done: true }, bests.get(w.exercises[exIndex].exerciseId)) && !set.done) navigator.vibrate?.([60, 40, 60, 40, 120]);
-    if (!set.done && state.settings.restSeconds > 0) setRestEnd(Date.now() + state.settings.restSeconds * 1000);
+    // Pausenzeit: eigene je Übung, sonst die allgemeine aus den Einstellungen (0 = keine Pause)
+    const rest = state.settings.restByExercise?.[w.exercises[exIndex].exerciseId] ?? state.settings.restSeconds;
+    if (!set.done && rest > 0) dispatch({ type: 'workout/rest', endsAt: Date.now() + rest * 1000, total: rest });
   }
 
   return (
@@ -208,6 +222,11 @@ function ActiveWorkout() {
           const lastNote = lastNoteFor(state, ex.exerciseId);
           const noteOpen = openNotes.has(exIndex) || !!ex.note;
           const complete = ex.sets.length > 0 && ex.sets.every((s) => s.done);
+          // Steigerung vorschlagen, solange in dieser Übung noch kein Satz abgehakt ist
+          const firstOpen = ex.sets.find((s) => !s.done);
+          const sug = !ex.sets.some((s) => s.done) && firstOpen
+            ? suggestNext(last, { target: ex.target, timed: info?.timed, equipment: info?.equipment }) : null;
+          const showSug = sug && (sug.kg ? parseNum(firstOpen.kg) < sug.kg - 1e-6 : parseNum(firstOpen.reps) < sug.reps);
           // Scheibenanzeige für den nächsten offenen Satz, sonst das zuletzt eingetragene Gewicht
           const filled = ex.sets.filter((s) => parseNum(s.kg) > 0);
           const nextKg = parseNum(ex.sets.find((s) => !s.done)?.kg);
@@ -218,12 +237,20 @@ function ActiveWorkout() {
                 <div>
                   <h2><ExLabel e={info} />{complete && <> <span className="done-badge"><Icon name="check" size={14} strokeWidth={3} /> {t('workout.exDone')}</span></>}</h2>
                   {record && (
-                    <span className="pill pill-record"><Icon name="trophy" size={14} /> {t('records.new')}: {parseNum(record.kg) > 0 ? `${fmtNum(parseNum(record.kg))} kg × ${fmtReps(record.reps)}` : fmtReps(record.reps)}</span>
+                    <span className="pill pill-record"><Icon name="trophy" size={14} /> {t('records.new')}: {parseNum(record.kg) > 0 ? `${fmtKg(parseNum(record.kg))} × ${fmtReps(record.reps)}` : fmtReps(record.reps)}</span>
                   )}
                   <p className="muted small">
-                    {last ? t('workout.lastTime', { sets: last.map((s) => (s.kg ? `${fmtNum(s.kg)}×${fmtReps(s.reps)}` : fmtReps(s.reps))).join(', ') }) : t('workout.firstTime')}
+                    {last ? t('workout.lastTime', { sets: last.map((s) => (s.kg ? `${fmtW(s.kg)}×${fmtReps(s.reps)}` : fmtReps(s.reps))).join(', ') }) : t('workout.firstTime')}
                   </p>
                   {lastNote && <p className="muted small last-note">{t('notes.last')}: {lastNote}</p>}
+                  {showSug && (
+                    <button type="button" className="suggest"
+                      onClick={() => dispatch({ type: 'workout/applySuggestion', exIndex, patch: sug.kg ? { kg: getUnit() === 'kg' ? fmtInput(sug.kg) : String(sug.kg) } : { reps: String(sug.reps) } })}>
+                      <Icon name="bulb" size={16} />
+                      <span>{t('suggest.text', { value: sug.kg ? fmtKg(sug.kg) : fmtReps(sug.reps) + (info?.timed ? '' : ` ${t('workout.reps')}`) })}</span>
+                      <strong>{t('suggest.apply')}</strong>
+                    </button>
+                  )}
                 </div>
                 <div className="exercise-tools">
                   <button className="icon-btn quiet-danger" aria-label={t('planEditor.remove')}
@@ -239,16 +266,16 @@ function ActiveWorkout() {
               <div className="set-table" role="table" aria-label={t('workout.setsOf', { name: exName(info) })}>
                 <div className="set-row set-row-head" role="row">
                   <span role="columnheader">{t('workout.set')}</span>
-                  <span role="columnheader">{isBodyweight ? '+kg' : 'kg'}</span>
+                  <span role="columnheader">{isBodyweight ? `+${getUnit()}` : getUnit()}</span>
                   <span role="columnheader">{repsLabel}</span>
                   <span role="columnheader" className="sr-only">{t('workout.done')}</span>
                 </div>
                 {ex.sets.map((set, setIndex) => (
                   <div key={setIndex} className={`set-row ${set.done ? 'is-done' : ''}`} role="row">
                     <span className="set-no num" role="cell">{setIndex + 1}</span>
-                    <input id={`w-${exIndex}-${setIndex}-kg`} className="num-input" role="cell" inputMode="decimal"
+                    <WeightInput id={`w-${exIndex}-${setIndex}-kg`} className="num-input" role="cell"
                       placeholder={isBodyweight ? '0' : '–'} value={set.kg} aria-label={t('workout.ariaWeight', { n: setIndex + 1 })}
-                      onChange={(e) => { const kg = cleanKg(e.target.value); if (kg != null) dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { kg } }); }} />
+                      onChange={(kg) => dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { kg } })} />
                     <input id={`w-${exIndex}-${setIndex}-reps`} className="num-input" role="cell" inputMode="numeric"
                       placeholder="–" value={set.reps} aria-label={t(info?.timed ? 'workout.ariaSeconds' : 'workout.ariaReps', { n: setIndex + 1 })}
                       onChange={(e) => { const reps = cleanReps(e.target.value); if (reps != null) dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { reps } }); }} />
@@ -286,7 +313,7 @@ function ActiveWorkout() {
       </div>
       </div>
 
-      {restEnd && state.settings.restSeconds > 0 && <RestTimer endsAt={restEnd} total={state.settings.restSeconds} onChange={setRestEnd} sound={state.settings.restSound !== false} />}
+      {restEnd && <RestTimer endsAt={restEnd} total={w.restTotal || state.settings.restSeconds || 90} onChange={setRestEnd} sound={state.settings.restSound !== false} />}
 
       {picking && (
         <ExercisePicker
@@ -304,7 +331,7 @@ function ActiveWorkout() {
 /** Zusammenfassung des letzten Trainings auf dem Startbildschirm – mit dem insgesamt bewegten Gewicht. */
 function LastWorkout({ workout: w, onOpen }) {
   const { t, planName } = useI18n();
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const records = useMemo(() => recordCounts(state.workouts).get(w.id) ?? 0, [state.workouts, w.id]);
   const sets = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
   const justNow = Date.now() - new Date(w.finishedAt).getTime() < 15 * 60_000;
@@ -314,7 +341,8 @@ function LastWorkout({ workout: w, onOpen }) {
         <h2>{t('training.last')}</h2>
         {justNow && <span className="pill">{t('training.justSaved')}</span>}
       </div>
-      <button className="card card-button last-workout" onClick={onOpen}>
+      <div className="card last-workout-card">
+      <button className="card-button last-workout" onClick={onOpen}>
         <span className="last-workout-text">
           <span className="eyebrow">{fmtDate(w.startedAt)}</span>
           <strong>{planName(w.planId, w.name)}</strong>
@@ -326,9 +354,17 @@ function LastWorkout({ workout: w, onOpen }) {
           <span className="muted small">{t('workout.moved')}</span>
         </span>
       </button>
+      <div className="row-actions last-workout-actions">
+        <button type="button" className="btn btn-small" onClick={() => dispatch({ type: 'workout/repeat', workoutId: w.id })}>
+          <Icon name="repeat" size={16} /> {t('training.repeat')}
+        </button>
+        <ShareWorkout workout={w} />
+      </div>
+      </div>
     </section>
   );
 }
+
 
 /** Hält den Bildschirm an, solange ein Training läuft (sonst sperrt sich das Handy in der Pause).
  *  Der Browser gibt die Sperre beim Wechsel in den Hintergrund frei – beim Zurückkehren neu anfordern. */

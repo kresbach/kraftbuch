@@ -8,6 +8,7 @@ import SettingsView from './views/SettingsView.jsx';
 import { Icon } from './components/Icon.jsx';
 import { useI18n } from './i18n/index.jsx';
 import { useBackClose } from './utils/useBackClose.js';
+import { setUnit } from './utils/training.js';
 
 const TABS = [
   { id: 'training', label: 'tab.training', icon: 'dumbbell', View: TrainingView, wide: true },
@@ -29,6 +30,7 @@ export default function App() {
   useLayoutEffect(() => { window.scrollTo(0, scrollPos.current[tab] ?? 0); }, [tab]);
   const { state } = useStore();
   const { t } = useI18n();
+  setUnit(state.settings.unit); // vor dem Rendern der Ansichten: Gewichte in kg oder lb anzeigen
   const { View, wide } = TABS.find((x) => x.id === tab);
   useHideTabbarWhileTyping();
   useBackClose(() => setTab('training'), tab !== 'training', { outer: true }); // Zurück führt von jedem Tab zum Training

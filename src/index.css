@@ -271,7 +271,7 @@ body.keyboard-open .tabbar { display: none; }
   width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
   padding: 14px 16px; border: 0; background: none; text-align: left;
 }
-.card-foot { display: flex; justify-content: flex-end; padding: 0 16px 14px; }
+.card-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 16px 14px; }
 
 .plan-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px 44px 14px 16px; }
 .plan-card > .btn-start { padding-inline: 14px; }
@@ -634,3 +634,30 @@ body.is-sorting .is-dragging.is-dropping { transition: transform 0.22s cubic-bez
 /* Fehleranzeige (ErrorBoundary) */
 .crash { max-width: 480px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 48px) 24px 24px; display: flex; flex-direction: column; gap: 14px; }
 .crash p { margin: 0; }
+
+/* ---------- Vorschlag, Plantage, Detailseite, Favoriten ---------- */
+.suggest {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; margin-top: 4px;
+  padding: 6px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-text); font-size: 14px; font-weight: 600;
+}
+.suggest span, .suggest strong { white-space: nowrap; }
+.suggest strong { padding-left: 8px; border-left: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.pill.pill-today { background: var(--accent); color: var(--accent-fg); }
+.plan-days { margin: 0; color: var(--accent-text); font-weight: 600; letter-spacing: 0.02em; }
+.day-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.day-picker .chip { justify-content: center; padding-inline: 0; }
+.last-workout-card { display: flex; flex-direction: column; }
+.last-workout-card .last-workout { border: 0; }
+.last-workout-actions { padding: 0 16px 14px; align-items: center; }
+.list-open { border: 0; background: none; padding: 0; text-align: left; color: inherit; cursor: pointer; }
+.fav-star { display: inline-flex; vertical-align: -2px; margin-right: 4px; color: #c99a06; }
+.fav-star svg { fill: currentColor; }
+.btn.is-fav { color: #8a6500; border-color: #e3c25c; background: #fbf1d0; }
+.btn.is-fav svg { fill: currentColor; }
+@media (prefers-color-scheme: dark) { .btn.is-fav { color: #f3d77a; border-color: #6b5718; background: #3d3310; } }
+.detail-head { display: flex; flex-direction: column; gap: 8px; }
+.detail-sessions { display: flex; flex-direction: column; padding: 0 16px; }
+.detail-session { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; }
+.detail-session + .detail-session { border-top: 1px solid var(--line); }
+.progress-layout.is-compact { display: flex; flex-direction: column; gap: 12px; }

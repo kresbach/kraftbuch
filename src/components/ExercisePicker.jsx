@@ -8,7 +8,7 @@ import { ExLabel } from './ExLabel.jsx';
 
 // Auswahl einer Übung mit Suche und Filter nach Muskelgruppe und Gerät.
 export function ExercisePicker({ onPick, onClose, title }) {
-  const { exercises } = useStore();
+  const { state, exercises } = useStore();
   const i18n = useI18n();
   const { t, exName, group: groupName, equip } = i18n;
   const [query, setQuery] = useState('');
@@ -21,6 +21,9 @@ export function ExercisePicker({ onPick, onClose, title }) {
       .filter((e) => (!group || e.group === group) && (!equipment || e.equipment === equipment) && matchesQuery(e, q, i18n))
       .sort((a, b) => i18n.compare(exName(a), exName(b)));
   }, [exercises, query, group, equipment, i18n, exName]);
+
+  const favs = (state.settings.favorites ?? []).map((id) => exercises.get(id)).filter(Boolean)
+    .sort((a, b) => i18n.compare(exName(a), exName(b)));
 
   // Bei neuer Suche oder neuem Filter zum Anfang der Trefferliste springen
   const top = useRef(null);
@@ -46,6 +49,23 @@ export function ExercisePicker({ onPick, onClose, title }) {
         </div>
         <EquipmentFilter value={equipment} onChange={setEquipment} />
       </div>
+      {/* Favoriten zuerst – solange weder gesucht noch gefiltert wird */}
+      {!query.trim() && !group && !equipment && favs.length > 0 && (
+        <>
+          <h3 className="group-title">{t('favorites.title')}</h3>
+          <ul className="pick-list">
+            {favs.map((e) => (
+              <li key={e.id}>
+                <button className="pick-item" onClick={() => onPick(e.id)}>
+                  <ExLabel e={e} />
+                  <span className="muted small">{groupName(e.group)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <h3 className="group-title">{t('favorites.all')}</h3>
+        </>
+      )}
       <ul className="pick-list">
         {list.map((e) => (
           <li key={e.id}>

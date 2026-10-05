@@ -38,7 +38,7 @@ export async function saveFile(file) {
     try {
       const handle = await window.showSaveFilePicker({
         suggestedName: file.name,
-        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        types: [{ description: file.type || 'Datei', accept: { [file.type || 'application/octet-stream']: [`.${file.name.split('.').pop()}`] } }],
       });
       const writable = await handle.createWritable();
       await writable.write(file);

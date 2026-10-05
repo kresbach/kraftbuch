@@ -6,7 +6,7 @@ import { ExLabel } from '../components/ExLabel.jsx';
 import { EmptyState } from '../components/EmptyState.jsx';
 import { ExercisePicker } from '../components/ExercisePicker.jsx';
 import { DragHandle, moveItem, useSortable } from '../components/Sortable.jsx';
-import { uid } from '../utils/training.js';
+import { fmtPlanDays, fmtWeekday, startOfWeek, uid } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 import { useBackClose } from '../utils/useBackClose.js';
 
@@ -56,6 +56,7 @@ export default function PlansView({ goTo }) {
             <DragHandle className="drag-handle card-corner" label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
             <button className="card-button" onClick={() => setEditing({ ...structuredClone(plan), name: planName(plan.id, plan.name) })}>
               <h3>{planName(plan.id, plan.name)}</h3>
+              {plan.days?.length > 0 && <span className="plan-days small">{fmtPlanDays(plan.days)}</span>}
               <ol className="plan-lines">
                 {plan.exercises.map((pe, i) => (
                   <li key={i}>
@@ -67,6 +68,9 @@ export default function PlansView({ goTo }) {
               <span className="link small">{t('common.edit')}</span>
             </button>
             <div className="card-foot">
+              <button className="btn btn-small btn-ghost" onClick={() => dispatch({ type: 'plan/duplicate', id: plan.id, name: t('plans.copyName', { name: planName(plan.id, plan.name) }) })}>
+                <Icon name="copy" size={16} /> {t('plans.duplicate')}
+              </button>
               {!state.activeWorkout ? (
                 <button className="btn btn-small" onClick={() => { dispatch({ type: 'workout/start', planId: plan.id }); goTo('training'); }}>
                   <Icon name="play" size={16} /> {t('common.start')}
@@ -122,6 +126,23 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
         <input id="plan-name" className="text-input" value={plan.name} placeholder={t('planEditor.placeholder')}
           onChange={(e) => { setPlan({ ...plan, name: e.target.value }); setError(''); }} />
       </label>
+
+      <fieldset className="field section">
+        <legend className="field-label">{t('planEditor.days')}</legend>
+        <div className="day-picker" role="group" aria-label={t('planEditor.days')}>
+          {[1, 2, 3, 4, 5, 6, 7].map((d) => {
+            const on = plan.days?.includes(d);
+            const date = new Date(startOfWeek()); date.setDate(date.getDate() + d - 1);
+            return (
+              <button key={d} type="button" className={`chip ${on ? 'is-on' : ''}`} aria-pressed={!!on}
+                onClick={() => setPlan((p) => ({ ...p, days: on ? p.days.filter((x) => x !== d) : [...(p.days ?? []), d].sort((a, b) => a - b) }))}>
+                {fmtWeekday(date)}
+              </button>
+            );
+          })}
+        </div>
+        <p className="muted small">{t('planEditor.daysHint')}</p>
+      </fieldset>
 
       <section className="section">
         <h2>{t('exercises.title')}</h2>

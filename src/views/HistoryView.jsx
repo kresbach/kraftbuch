@@ -6,7 +6,8 @@ import { Sheet } from '../components/Sheet.jsx';
 import { useUndo } from '../components/Undo.jsx';
 import { ExLabel } from '../components/ExLabel.jsx';
 import { EmptyState } from '../components/EmptyState.jsx';
-import { cleanKg, cleanReps, estimate1RM, exerciseVolume, recordCounts, fmtDate, fmtDuration, fmtMonth, fmtNum, fmtWeight, startOfWeek, parseNum, workoutVolume } from '../utils/training.js';
+import { ShareWorkout } from '../components/ShareWorkout.jsx';
+import { cleanKg, cleanReps, estimate1RM, fmtInput, fmtW, fromUnit, getUnit, toUnit, exerciseVolume, recordCounts, fmtDate, fmtDuration, fmtMonth, fmtNum, fmtWeight, startOfWeek, parseNum, workoutVolume } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 import { MuscleStats } from './MuscleStats.jsx';
 
@@ -45,7 +46,7 @@ export default function HistoryView({ goTo }) {
 /** Wiederholungen bzw. Sekunden einer Übung anzeigen */
 const fmtSet = (s, info, t) => {
   const reps = info?.timed ? `${s.reps} s` : null;
-  if (s.kg) return `${fmtNum(s.kg)} × ${reps ?? s.reps}`;
+  if (s.kg) return `${fmtW(s.kg)} × ${reps ?? s.reps}`;
   return reps ?? `${s.reps} ${t('workout.reps')}`;
 };
 
@@ -59,7 +60,7 @@ function bucketOf(iso, t) {
 }
 
 function WorkoutList({ goTo }) {
-  const { state, exercises } = useStore();
+  const { state, dispatch, exercises } = useStore();
   const { t, exName, planName } = useI18n();
   const withUndo = useUndo();
   const [open, setOpen] = useState(null);
@@ -121,6 +122,12 @@ function WorkoutList({ goTo }) {
                     );
                   })}
                   <div className="row-actions">
+                    {!state.activeWorkout && (
+                      <button className="btn btn-small" onClick={() => { dispatch({ type: 'workout/repeat', workoutId: w.id }); goTo('training'); }}>
+                        <Icon name="repeat" size={16} /> {t('training.repeat')}
+                      </button>
+                    )}
+                    <ShareWorkout workout={w} />
                     <button className="btn btn-small" onClick={() => setEditing(w)}>
                       <Icon name="edit" size={16} /> {t('common.edit')}
                     </button>
@@ -150,7 +157,7 @@ function WorkoutEditor({ workout, onClose }) {
   const withUndo = useUndo();
   const [note, setNote] = useState(workout.note ?? '');
   const [draft, setDraft] = useState(() => workout.exercises.map((ex) => ({
-    ...ex, sets: ex.sets.map((s) => ({ kg: s.kg ? String(s.kg).replace('.', ',') : '', reps: String(s.reps) })),
+    ...ex, sets: ex.sets.map((s) => ({ kg: s.kg ? fmtInput(Math.round(toUnit(s.kg) * 100) / 100) : '', reps: String(s.reps) })), // in Anzeigeeinheit
   })));
 
   const update = (fn) => setDraft((d) => fn(structuredClone(d)));
@@ -165,7 +172,7 @@ function WorkoutEditor({ workout, onClose }) {
     const cleaned = draft
       .map((ex) => ({
         ...ex,
-        sets: ex.sets.filter((s) => parseNum(s.reps) > 0).map((s) => ({ kg: parseNum(s.kg), reps: parseNum(s.reps), done: true })),
+        sets: ex.sets.filter((s) => parseNum(s.reps) > 0).map((s) => ({ kg: Math.round(fromUnit(parseNum(s.kg)) * 1000) / 1000, reps: parseNum(s.reps), done: true })),
       }))
       .filter((ex) => ex.sets.length > 0);
     if (cleaned.length === 0) withUndo(t('undo.workoutDeleted'), { type: 'history/delete', id: workout.id }, ['workouts']);
@@ -190,7 +197,7 @@ function WorkoutEditor({ workout, onClose }) {
               <div className="set-table" role="table">
                 <div className="set-row set-row-head" role="row">
                   <span role="columnheader">{t('workout.set')}</span>
-                  <span role="columnheader">kg</span>
+                  <span role="columnheader">{getUnit()}</span>
                   <span role="columnheader">{repsLabel}</span>
                   <span role="columnheader" className="sr-only">{t('history.removeSet')}</span>
                 </div>
@@ -243,7 +250,24 @@ function Progress() {
     return <EmptyState icon="chart" title={t('progress.emptyTitle')} text={t('progress.empty')} />;
   }
 
+  return (
+    <ExerciseProgress exerciseId={exerciseId} picker={
+      <label className="field">
+        <span className="field-label">{t('progress.exercise')}</span>
+        <select id="progress-exercise" className="text-input" value={exerciseId} onChange={(e) => setSelected(e.target.value)}>
+          {trained.map((id) => <option key={id} value={id}>{exName(exercises.get(id))}</option>)}
+        </select>
+      </label>
+    } />
+  );
+}
+
+/** Bestwerte und Diagramm einer Übung – im Verlauf („Fortschritt“) und auf der Übungs-Detailseite. */
+export function ExerciseProgress({ exerciseId, picker = null, compact = false }) {
+  const { state, exercises } = useStore();
+  const { t } = useI18n();
   const info = exercises.get(exerciseId);
+  if (!info) return null;
   const isBodyweight = info.type === 'bodyweight';
   const timed = !!info.timed;
   const sessions = state.workouts
@@ -251,11 +275,12 @@ function Progress() {
     .filter((s) => s.sets.length)
     .reverse(); // älteste zuerst
 
+  // Gewichtswerte in der Anzeigeeinheit (kg oder lb)
   const points = sessions.map((s) => ({
     date: s.date,
     value: isBodyweight
       ? Math.max(...s.sets.map((x) => x.reps))
-      : Math.round(Math.max(...s.sets.map((x) => estimate1RM(x.kg, x.reps))) * 10) / 10,
+      : Math.round(toUnit(Math.max(...s.sets.map((x) => estimate1RM(x.kg, x.reps)))) * 10) / 10,
   }));
   if (points.length === 0) return <EmptyState icon="chart" title={t('progress.emptyTitle')} text={t('progress.empty')} />;
   const allSets = sessions.flatMap((s) => s.sets);
@@ -264,37 +289,29 @@ function Progress() {
   const first = points[0].value;
 
   return (
-    <>
-      <div className="progress-layout">
+    <div className={`progress-layout ${compact ? 'is-compact' : ''}`}>
       <div className="progress-side">
-      <label className="field">
-        <span className="field-label">{t('progress.exercise')}</span>
-        <select id="progress-exercise" className="text-input" value={exerciseId} onChange={(e) => setSelected(e.target.value)}>
-          {trained.map((id) => <option key={id} value={id}>{exName(exercises.get(id))}</option>)}
-        </select>
-      </label>
-
-      <section className="stats">
-        <div className="stat">
-          <span className="stat-value num">{fmtNum(best)}</span>
-          <span className="stat-label">{t(timed ? 'progress.longest' : isBodyweight ? 'progress.mostReps' : 'progress.best1rm')}</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value num">{heaviest.kg ? `${fmtNum(heaviest.kg)}×${heaviest.reps}` : heaviest.reps}{timed ? ' s' : ''}</span>
-          <span className="stat-label">{t(isBodyweight ? 'progress.bestSet' : 'progress.heaviestSet')}</span>
-        </div>
-        <div className="stat">
-          <span className={`stat-value num ${best > first ? 'up' : ''}`}>{best > first ? '+' : ''}{fmtNum(Math.round((best - first) * 10) / 10)}</span>
-          <span className="stat-label">{t('progress.sinceFirst')}</span>
-        </div>
-      </section>
+        {picker}
+        <section className="stats">
+          <div className="stat">
+            <span className="stat-value num">{fmtNum(best)}</span>
+            <span className="stat-label">{t(timed ? 'progress.longest' : isBodyweight ? 'progress.mostReps' : 'progress.best1rm', { unit: getUnit() })}</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value num">{heaviest.kg ? `${fmtW(heaviest.kg)}×${heaviest.reps}` : heaviest.reps}{timed ? ' s' : ''}</span>
+            <span className="stat-label">{t(isBodyweight ? 'progress.bestSet' : 'progress.heaviestSet')}</span>
+          </div>
+          <div className="stat">
+            <span className={`stat-value num ${best > first ? 'up' : ''}`}>{best > first ? '+' : ''}{fmtNum(Math.round((best - first) * 10) / 10)}</span>
+            <span className="stat-label">{t('progress.sinceFirst')}</span>
+          </div>
+        </section>
       </div>
 
       <div className="card chart-card">
         <h3 className="small muted">{t(timed ? 'progress.chartSeconds' : isBodyweight ? 'progress.chartReps' : 'progress.chart1rm')}</h3>
-        <ProgressChart points={points} unit={timed ? 's' : isBodyweight ? t('workout.reps') : 'kg'} />
+        <ProgressChart points={points} unit={timed ? 's' : isBodyweight ? t('workout.reps') : getUnit()} />
       </div>
-      </div>
-    </>
+    </div>
   );
 }

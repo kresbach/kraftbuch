@@ -6,9 +6,10 @@ import { useI18n } from '../i18n/index.jsx';
 import { Icon } from '../components/Icon.jsx';
 import { ExLabel } from '../components/ExLabel.jsx';
 import { EmptyState } from '../components/EmptyState.jsx';
+import { ExerciseDetail } from '../components/ExerciseDetail.jsx';
 import { Sheet } from '../components/Sheet.jsx';
 import { useUndo } from '../components/Undo.jsx';
-import { estimate1RM, fmtNum } from '../utils/training.js';
+import { estimate1RM, fmtKg } from '../utils/training.js';
 
 export default function ExercisesView() {
   const { state, dispatch, exercises } = useStore();
@@ -18,6 +19,8 @@ export default function ExercisesView() {
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null); // eigene Übung, die bearbeitet wird
+  const [detail, setDetail] = useState(null); // Übung, deren Detailseite offen ist
+  const favorites = state.settings.favorites ?? [];
   const [equipment, setEquipment] = useState(null);
   const searchBar = useRef(null);
 
@@ -78,14 +81,17 @@ export default function ExercisesView() {
                 const best = bests.get(e.id);
                 return (
                   <li key={e.id} className="list-item">
-                    <div className="list-main">
-                      <span><ExLabel e={e} /> {e.custom && <span className="pill pill-muted">{t('exercises.customBadge')}</span>}</span>
+                    <button type="button" className="list-main list-open" onClick={() => setDetail(e)}>
+                      <span>
+                        {favorites.includes(e.id) && <span className="fav-star" aria-label={t('favorites.title')}><Icon name="star" size={14} /></span>}
+                        <ExLabel e={e} /> {e.custom && <span className="pill pill-muted">{t('exercises.customBadge')}</span>}
+                      </span>
                       {best && (
                         <span className="muted small">
-                          {best.e1rm > 0 ? t('exercises.best1rm', { kg: fmtNum(Math.round(best.e1rm)) }) : t('exercises.bestReps', { reps: best.reps })}
+                          {best.e1rm > 0 ? t('exercises.best1rm', { kg: fmtKg(Math.round(best.e1rm)) }) : t('exercises.bestReps', { reps: best.reps })}
                         </span>
                       )}
-                    </div>
+                    </button>
                     {e.custom && (
                       <button className="icon-btn" aria-label={t('exercises.edit', { name: exName(e) })} onClick={() => setEditing(e)}>
                         <Icon name="edit" size={18} />
@@ -114,6 +120,9 @@ export default function ExercisesView() {
       )}
 
       {adding && <AddExercise initialName={query} onClose={() => setAdding(false)} onSave={(exercise) => { dispatch({ type: 'exercise/add', exercise }); setAdding(false); }} />}
+      {detail && !editing && (
+        <ExerciseDetail exercise={exercises.get(detail.id) ?? detail} onClose={() => setDetail(null)} onEdit={() => setEditing(exercises.get(detail.id) ?? detail)} />
+      )}
       {editing && (
         <AddExercise existing={editing} onClose={() => setEditing(null)}
           onSave={(exercise) => { dispatch({ type: 'exercise/update', exercise: { ...editing, ...exercise } }); setEditing(null); }} />
