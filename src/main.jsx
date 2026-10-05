@@ -6,6 +6,7 @@ import { StoreProvider } from './state/store.jsx';
 import { CloudSyncProvider } from './cloud/CloudSync.jsx';
 import { I18nProvider } from './i18n/index.jsx';
 import { UndoProvider } from './components/Undo.jsx';
+import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import './index.css';
 import { relocateIfMoved } from './utils/relocate.js';
 
@@ -25,6 +26,7 @@ registerSW({
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <ErrorBoundary>
     <StoreProvider>
       <I18nProvider>
         <CloudSyncProvider>
@@ -34,6 +36,7 @@ createRoot(document.getElementById('root')).render(
         </CloudSyncProvider>
       </I18nProvider>
     </StoreProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );
 

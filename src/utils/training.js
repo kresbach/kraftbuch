@@ -148,6 +148,7 @@ export function fmtClock(ms) {
 }
 
 export function fmtDuration(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return '–';
   if (ms < 60000) return '< 1 min';
   const min = Math.round(ms / 60000);
   if (min < 60) return `${min} min`;

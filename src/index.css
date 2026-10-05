@@ -627,3 +627,7 @@ body.keyboard-open .toast { bottom: calc(var(--safe-b) + 10px); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Fehleranzeige (ErrorBoundary) */
+.crash { max-width: 480px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 48px) 24px 24px; display: flex; flex-direction: column; gap: 14px; }
+.crash p { margin: 0; }

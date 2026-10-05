@@ -232,7 +232,7 @@ function Progress() {
   // Übungen, die im Verlauf vorkommen – die häufigste zuerst
   const trained = useMemo(() => {
     const count = new Map();
-    for (const w of state.workouts) for (const ex of w.exercises) count.set(ex.exerciseId, (count.get(ex.exerciseId) ?? 0) + 1);
+    for (const w of state.workouts) for (const ex of w.exercises) if (ex.sets.length) count.set(ex.exerciseId, (count.get(ex.exerciseId) ?? 0) + 1);
     return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id).filter((id) => exercises.has(id));
   }, [state.workouts, exercises]);
 
@@ -257,6 +257,7 @@ function Progress() {
       ? Math.max(...s.sets.map((x) => x.reps))
       : Math.round(Math.max(...s.sets.map((x) => estimate1RM(x.kg, x.reps))) * 10) / 10,
   }));
+  if (points.length === 0) return <EmptyState icon="chart" title={t('progress.emptyTitle')} text={t('progress.empty')} />;
   const allSets = sessions.flatMap((s) => s.sets);
   const heaviest = allSets.reduce((a, b) => (b.kg > a.kg || (b.kg === a.kg && b.reps > a.reps) ? b : a), allSets[0]);
   const best = Math.max(...points.map((p) => p.value));

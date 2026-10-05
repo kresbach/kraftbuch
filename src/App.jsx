@@ -31,7 +31,7 @@ export default function App() {
   const { t } = useI18n();
   const { View, wide } = TABS.find((x) => x.id === tab);
   useHideTabbarWhileTyping();
-  useBackClose(() => setTab('training'), tab !== 'training'); // Zurück führt von jedem Tab zum Training
+  useBackClose(() => setTab('training'), tab !== 'training', { outer: true }); // Zurück führt von jedem Tab zum Training
 
   return (
     <div className="app">

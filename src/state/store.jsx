@@ -1,6 +1,6 @@
 // Stellt den Zustand per Context bereit und speichert ihn lokal auf dem Gerät.
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
-import { exerciseMap, initialState, rootReducer } from './reducer.js';
+import { exerciseMap, initialState, normalizeData, rootReducer } from './reducer.js';
 
 const STORAGE_KEY = 'kraftbuch:v1';
 const StoreContext = createContext(null);
@@ -8,7 +8,10 @@ const StoreContext = createContext(null);
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...initialState, ...JSON.parse(raw) };
+    if (raw) {
+      const data = JSON.parse(raw);
+      return { ...initialState, ...data, ...normalizeData(data), updatedAt: Number(data?.updatedAt) || 0 };
+    }
   } catch {
     // Kein Zugriff auf den Speicher (z. B. privater Modus): mit Startzustand weiter.
   }

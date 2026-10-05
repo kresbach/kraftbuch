@@ -27,11 +27,46 @@ export function syncedData(state) {
 /** Prüft, ob eine Datei/Cloud-Antwort eine Kraftbuch-Sicherung ist. */
 export const isBackup = (data) => !!data && Array.isArray(data.workouts) && Array.isArray(data.plans);
 
-function pickSynced(data) {
+// ---- Eingelesene Daten bereinigen (Speicher, Datei, Cloud) ----
+// Fehlerhafte oder unvollständige Einträge dürfen die App nicht zum Absturz bringen.
+const arr = (v) => (Array.isArray(v) ? v : []);
+const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+const validDate = (v) => typeof v === 'string' && !Number.isNaN(Date.parse(v));
+
+function cleanWorkout(w) {
+  const startedAt = validDate(w.startedAt) ? w.startedAt : new Date().toISOString();
+  return {
+    ...w,
+    id: w.id || uid(),
+    name: typeof w.name === 'string' && w.name ? w.name : 'Freies Training',
+    startedAt,
+    ...('finishedAt' in w ? { finishedAt: validDate(w.finishedAt) ? w.finishedAt : startedAt } : {}),
+    exercises: arr(w.exercises).filter((ex) => isObj(ex) && ex.exerciseId)
+      .map((ex) => ({ ...ex, sets: arr(ex.sets).filter(isObj).map((s) => ({ kg: s.kg ?? '', reps: s.reps ?? '', done: !!s.done })) })),
+  };
+}
+
+/** Bereinigt die synchronisierten Teile; fehlende Teile bleiben weg (werden nicht überschrieben). */
+export function normalizeData(data) {
+  if (!isObj(data)) return {};
   const out = {};
-  for (const k of SYNCED_KEYS) if (data[k] !== undefined) out[k] = data[k];
+  if ('customExercises' in data) out.customExercises = arr(data.customExercises).filter((e) => isObj(e) && e.id && typeof e.name === 'string');
+  if ('plans' in data) {
+    out.plans = arr(data.plans).filter((p) => isObj(p) && p.id).map((p) => ({
+      ...p,
+      name: typeof p.name === 'string' ? p.name : '',
+      exercises: arr(p.exercises).filter((pe) => isObj(pe) && pe.exerciseId)
+        .map((pe) => ({ ...pe, sets: Number(pe.sets) || 3, reps: Number(pe.reps) || 8 })),
+    }));
+  }
+  if ('workouts' in data) out.workouts = arr(data.workouts).filter(isObj).map((w) => cleanWorkout({ finishedAt: w.startedAt, ...w }));
+  if ('settings' in data) out.settings = { ...initialState.settings, ...(isObj(data.settings) ? data.settings : {}) };
+  if ('activeWorkout' in data) out.activeWorkout = isObj(data.activeWorkout) ? cleanWorkout(data.activeWorkout) : null;
   return out;
 }
+
+const pickSynced = normalizeData;
 
 /** Alle Übungen (Standard + eigene) als Map id → Übung. */
 export function exerciseMap(state) {
