@@ -452,7 +452,10 @@ body.keyboard-open .toast { bottom: calc(var(--safe-b) + 10px); }
 .card-corner + .card-button { padding-right: 44px; }
 .version { padding-top: 8px; }
 .is-sorting, .is-sorting * { user-select: none; -webkit-user-select: none; cursor: grabbing !important; }
-.is-shifting { transition: transform 0.18s ease; will-change: transform; }
+/* body.is-sorting davor: stärker als die Übergänge einzelner Karten (z. B. .exercise), sonst springen sie */
+body.is-sorting .is-shifting { transition: transform 0.32s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; } /* weich abbremsend */
+body.is-sorting .is-dragging { transition: box-shadow 0.2s ease; }
+body.is-sorting .is-dragging.is-dropping { transition: transform 0.22s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.22s ease; box-shadow: none; }
 .is-dragging {
   position: relative; z-index: 5; will-change: transform;
   box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
