@@ -121,7 +121,7 @@ function ActiveWorkout() {
     if (!set.done && state.settings.restSound !== false) unlockSound(); // Ton am Pausenende erlauben (iOS)
     dispatch({ type: 'workout/updateSet', exIndex, setIndex, patch: { done: !set.done } });
     if (isRecord({ ...set, done: true }, bests.get(w.exercises[exIndex].exerciseId)) && !set.done) navigator.vibrate?.([60, 40, 60, 40, 120]);
-    if (!set.done) setRestEnd(Date.now() + state.settings.restSeconds * 1000);
+    if (!set.done && state.settings.restSeconds > 0) setRestEnd(Date.now() + state.settings.restSeconds * 1000);
   }
 
   return (
@@ -267,7 +267,7 @@ function ActiveWorkout() {
       </div>
       </div>
 
-      {restEnd && <RestTimer endsAt={restEnd} total={state.settings.restSeconds} onChange={setRestEnd} sound={state.settings.restSound !== false} />}
+      {restEnd && state.settings.restSeconds > 0 && <RestTimer endsAt={restEnd} total={state.settings.restSeconds} onChange={setRestEnd} sound={state.settings.restSound !== false} />}
 
       {picking && (
         <ExercisePicker

@@ -29,6 +29,7 @@ jobs:
       - run: node src/cloud/syncLogic.test.mjs
       - run: node src/i18n/i18n.test.mjs
       - run: node src/state/reducer.test.mjs
+      - run: node src/utils/stats.test.mjs
       - run: npm run build
         env:
           # Öffentliche OAuth-Client-ID für Google Drive (Repository-Variable, kein Geheimnis)

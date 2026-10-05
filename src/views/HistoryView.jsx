@@ -6,10 +6,12 @@ import { Sheet } from '../components/Sheet.jsx';
 import { useUndo } from '../components/Undo.jsx';
 import { cleanKg, cleanReps, estimate1RM, exerciseVolume, recordCounts, fmtDate, fmtDuration, fmtNum, fmtWeight, parseNum, workoutVolume } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
+import { MuscleStats } from './MuscleStats.jsx';
 
 const SECTIONS = [
   { id: 'list', label: 'history.workouts' },
   { id: 'progress', label: 'history.progress' },
+  { id: 'muscles', label: 'history.muscles' },
 ];
 
 export default function HistoryView() {
@@ -30,6 +32,7 @@ export default function HistoryView() {
       <div className="section">
         {section === 'list' && <WorkoutList />}
         {section === 'progress' && <Progress />}
+        {section === 'muscles' && <MuscleStats />}
       </div>
     </>
   );

@@ -283,6 +283,19 @@ body.keyboard-open .tabbar { display: none; }
 @keyframes record-in { from { transform: scale(0.85); opacity: 0; } }
 .last-note { font-style: italic; }
 textarea.text-input { padding: 10px 14px; min-height: 44px; resize: vertical; font: inherit; font-size: 16px; line-height: 1.4; }
+/* Statistik je Muskelgruppe: ein Balken pro Gruppe, Länge = Sätze im Zeitraum */
+.muscle-stats { display: flex; flex-direction: column; gap: 10px; }
+.muscle-list { display: flex; flex-direction: column; padding: 4px 16px; }
+.muscle-row { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; }
+.muscle-row + .muscle-row { border-top: 1px solid var(--line); }
+.muscle-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.muscle-track { display: block; height: 10px; border-radius: 0 4px 4px 0; background: color-mix(in srgb, var(--line) 55%, transparent); overflow: hidden; }
+.muscle-bar { display: block; height: 100%; border-radius: 0 4px 4px 0; background: var(--accent); transform-origin: left; transition: transform 0.3s ease; }
+.muscle-row.is-empty .muscle-head { color: var(--muted); }
+.segmented-small button { font-size: 13px; padding-inline: 4px; white-space: nowrap; }
+@media (max-width: 360px) { .segmented-small button { font-size: 12px; padding-inline: 2px; } }
+@media (min-width: 1024px) { .muscle-stats { max-width: 720px; } }
+
 .detail-note { margin: 0; white-space: pre-wrap; color: var(--fg); font-style: italic; }
 
 /* Letztes Training (Startseite) und Trainings im Verlauf: Gewicht rechts groß */

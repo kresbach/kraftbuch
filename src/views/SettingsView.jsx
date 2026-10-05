@@ -41,15 +41,17 @@ export default function SettingsView() {
       <fieldset className="field">
         <legend className="field-label">{t('settings.rest')}</legend>
         <div className="segmented">
-          {[60, 90, 120, 180].map((s) => (
+          {[0, 60, 90, 120, 180].map((s) => (
             <button key={s} type="button" className={state.settings.restSeconds === s ? 'is-on' : ''}
               onClick={() => dispatch({ type: 'settings/update', patch: { restSeconds: s } })}>
-              {s < 120 ? `${s} s` : `${s / 60} min`}
+              {s === 0 ? t('settings.off') : s < 120 ? `${s} s` : `${s / 60} min`}
             </button>
           ))}
         </div>
+        <p className="muted small">{t(state.settings.restSeconds > 0 ? 'settings.restHint' : 'settings.restOffHint')}</p>
       </fieldset>
 
+      {state.settings.restSeconds > 0 && (
       <fieldset className="field">
         <legend className="field-label">{t('settings.restSound')}</legend>
         <div className="segmented">
@@ -62,6 +64,7 @@ export default function SettingsView() {
         </div>
         <p className="muted small">{t('settings.restSoundHint')}</p>
       </fieldset>
+      )}
 
       <fieldset className="field">
         <legend className="field-label">{t('settings.bar')}</legend>
