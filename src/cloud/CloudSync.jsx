@@ -60,7 +60,9 @@ export function CloudSyncProvider({ children }) {
   const conflictOpen = useRef(false);
   conflictOpen.current = !!conflict;
 
-  const runGoogleSync = useCallback(async () => {
+  // `manual`: vom Nutzer angestoßen („Jetzt synchronisieren“) – nur dann „Synchronisiere …“ anzeigen.
+  // Automatische Abgleiche laufen still im Hintergrund; nur Fehler und Konflikte werden sichtbar.
+  const runGoogleSync = useCallback(async ({ manual = false } = {}) => {
     if (running.current) return;
     const token = validToken();
     if (!token) {
@@ -68,7 +70,7 @@ export function CloudSyncProvider({ children }) {
       return;
     }
     running.current = true;
-    setStatus({ phase: 'syncing', msg: 'cloud.syncing' });
+    if (manual) setStatus({ phase: 'syncing', msg: 'cloud.syncing' });
     try {
       const m = metaRef.current;
       const remote = await findFile(token);
@@ -124,7 +126,7 @@ export function CloudSyncProvider({ children }) {
         signingIn.current = false;
       }
     }
-    await runGoogleSync();
+    await runGoogleSync({ manual: true });
   }, [runGoogleSync, setMeta]);
 
   const resolveConflict = useCallback(async (keep) => {
@@ -138,7 +140,7 @@ export function CloudSyncProvider({ children }) {
     } else {
       // Gerätestand gilt: Cloud-Version als bekannt markieren, dann hochladen
       setMeta({ remoteVersion: c.remote.modifiedTime, lastSyncedAt: 0, fileId: c.remote.id });
-      await runGoogleSync();
+      await runGoogleSync({ manual: true });
     }
   }, [conflict, dispatch, runGoogleSync, setMeta]);
 
