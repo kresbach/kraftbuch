@@ -4,7 +4,9 @@ import { Icon } from '../components/Icon.jsx';
 import { ProgressChart } from '../components/ProgressChart.jsx';
 import { Sheet } from '../components/Sheet.jsx';
 import { useUndo } from '../components/Undo.jsx';
-import { cleanKg, cleanReps, estimate1RM, exerciseVolume, recordCounts, fmtDate, fmtDuration, fmtNum, fmtWeight, parseNum, workoutVolume } from '../utils/training.js';
+import { ExLabel } from '../components/ExLabel.jsx';
+import { EmptyState } from '../components/EmptyState.jsx';
+import { cleanKg, cleanReps, estimate1RM, exerciseVolume, recordCounts, fmtDate, fmtDuration, fmtMonth, fmtNum, fmtWeight, startOfWeek, parseNum, workoutVolume } from '../utils/training.js';
 import { useI18n } from '../i18n/index.jsx';
 import { MuscleStats } from './MuscleStats.jsx';
 
@@ -14,7 +16,7 @@ const SECTIONS = [
   { id: 'muscles', label: 'history.muscles' },
 ];
 
-export default function HistoryView() {
+export default function HistoryView({ goTo }) {
   const [section, setSection] = useState('list');
   const { t } = useI18n();
   return (
@@ -30,7 +32,7 @@ export default function HistoryView() {
         ))}
       </div>
       <div className="section">
-        {section === 'list' && <WorkoutList />}
+        {section === 'list' && <WorkoutList goTo={goTo} />}
         {section === 'progress' && <Progress />}
         {section === 'muscles' && <MuscleStats />}
       </div>
@@ -47,7 +49,16 @@ const fmtSet = (s, info, t) => {
   return reps ?? `${s.reps} ${t('workout.reps')}`;
 };
 
-function WorkoutList() {
+/** Zwischenüberschrift für ein Training: „Diese Woche“, „Letzte Woche“ oder der Monat */
+function bucketOf(iso, t) {
+  const week = startOfWeek(new Date(iso)).getTime();
+  const thisWeek = startOfWeek().getTime();
+  if (week === thisWeek) return t('history.thisWeek');
+  if (week === thisWeek - 7 * 86400000 || Math.abs(week - (thisWeek - 7 * 86400000)) < 2 * 3600000) return t('history.lastWeek');
+  return fmtMonth(new Date(iso));
+}
+
+function WorkoutList({ goTo }) {
   const { state, exercises } = useStore();
   const { t, exName, planName } = useI18n();
   const withUndo = useUndo();
@@ -56,13 +67,24 @@ function WorkoutList() {
   const records = useMemo(() => recordCounts(state.workouts), [state.workouts]);
 
   if (state.workouts.length === 0) {
-    return <p className="muted">{t('history.empty')}</p>;
+    return <EmptyState icon="chart" title={t('history.emptyTitle')} text={t('history.empty')} action={t('history.startFirst')} onAction={() => goTo('training')} />;
+  }
+
+  // Trainings nach Woche bzw. Monat gruppieren (Liste ist schon neuestes zuerst)
+  const groups = [];
+  for (const w of state.workouts) {
+    const label = bucketOf(w.startedAt, t);
+    if (groups.at(-1)?.label !== label) groups.push({ label, items: [] });
+    groups.at(-1).items.push(w);
   }
 
   return (
     <>
+      {groups.map((g) => (
+      <section key={g.label} className="history-group">
+      <h2 className="group-title">{g.label}</h2>
       <ul className="cards cards-grid">
-        {state.workouts.map((w) => {
+        {g.items.map((w) => {
           const isOpen = open === w.id;
           const sets = w.exercises.reduce((n, ex) => n + ex.sets.length, 0);
           return (
@@ -90,7 +112,7 @@ function WorkoutList() {
                     return (
                       <div key={i} className="detail-line">
                         <span className="detail-title">
-                          <strong>{info ? exName(info) : t('history.deletedExercise')}</strong>
+                          <ExLabel e={info} as="strong" fallback={t('history.deletedExercise')} />
                           {v > 0 && <span className="muted small num">{fmtWeight(v)}</span>}
                         </span>
                         <span className="muted num">{ex.sets.map((s) => fmtSet(s, info, t)).join(' · ')}</span>
@@ -113,6 +135,8 @@ function WorkoutList() {
           );
         })}
       </ul>
+      </section>
+      ))}
       {editing && <WorkoutEditor workout={editing} onClose={() => setEditing(null)} />}
     </>
   );
@@ -158,8 +182,8 @@ function WorkoutEditor({ workout, onClose }) {
           return (
             <section key={i} className="edit-exercise">
               <header className="exercise-head">
-                <h3>{info ? exName(info) : t('history.deletedExercise')}</h3>
-                <button type="button" className="icon-btn danger" aria-label={t('planEditor.remove')} onClick={() => removeExercise(i)}>
+                <ExLabel e={info} as="h3" fallback={t('history.deletedExercise')} />
+                <button type="button" className="icon-btn quiet-danger" aria-label={t('planEditor.remove')} onClick={() => removeExercise(i)}>
                   <Icon name="trash" size={18} />
                 </button>
               </header>
@@ -177,7 +201,7 @@ function WorkoutEditor({ workout, onClose }) {
                       aria-label={t('workout.ariaWeight', { n: j + 1 })} onChange={(e) => { const v = cleanKg(e.target.value); if (v != null) setField(i, j, 'kg', v); }} />
                     <input id={`h-${i}-${j}-reps`} className="num-input" role="cell" inputMode="numeric" placeholder="–" value={s.reps}
                       aria-label={t(info?.timed ? 'workout.ariaSeconds' : 'workout.ariaReps', { n: j + 1 })} onChange={(e) => { const v = cleanReps(e.target.value); if (v != null) setField(i, j, 'reps', v); }} />
-                    <button type="button" role="cell" className="icon-btn danger set-remove" aria-label={t('history.removeSet')} onClick={() => removeSet(i, j)}>
+                    <button type="button" role="cell" className="icon-btn quiet-danger set-remove" aria-label={t('history.removeSet')} onClick={() => removeSet(i, j)}>
                       <Icon name="close" size={18} />
                     </button>
                   </div>
@@ -216,7 +240,7 @@ function Progress() {
   const exerciseId = trained.includes(selected) ? selected : trained[0];
 
   if (!exerciseId) {
-    return <p className="muted">{t('progress.empty')}</p>;
+    return <EmptyState icon="chart" title={t('progress.emptyTitle')} text={t('progress.empty')} />;
   }
 
   const info = exercises.get(exerciseId);

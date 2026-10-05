@@ -2,8 +2,10 @@
 import { writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 
-const BG = [100, 126, 75];
-const FG = [255, 255, 255];
+// Leichter Verlauf von hellerem zu dunklerem Oliv, Hantel in warmem Cremeweiß
+const BG_TOP = [118, 146, 89];
+const BG_BOTTOM = [86, 110, 63];
+const FG = [250, 248, 238];
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -28,11 +30,18 @@ const chunk = (type, data) => {
 function isDumbbell(x, y, scale) {
   const u = (x - 0.5) / scale + 0.5;
   const v = (y - 0.5) / scale + 0.5;
-  const rect = (x0, x1, h) => u >= x0 && u <= x1 && Math.abs(v - 0.5) <= h / 2;
+  // Rechteck mit abgerundeten Ecken (Radius r), vertikal mittig
+  const rect = (x0, x1, h, r) => {
+    const y0 = 0.5 - h / 2, y1 = 0.5 + h / 2;
+    if (u < x0 || u > x1 || v < y0 || v > y1) return false;
+    const cx = Math.min(Math.max(u, x0 + r), x1 - r);
+    const cy = Math.min(Math.max(v, y0 + r), y1 - r);
+    return (u - cx) ** 2 + (v - cy) ** 2 <= r * r;
+  };
   return (
-    rect(0.3, 0.7, 0.06) || // Stange
-    rect(0.2, 0.28, 0.44) || rect(0.72, 0.8, 0.44) || // große Scheiben
-    rect(0.12, 0.2, 0.3) || rect(0.8, 0.88, 0.3) // kleine Scheiben
+    rect(0.28, 0.72, 0.065, 0.02) || // Stange
+    rect(0.19, 0.285, 0.46, 0.03) || rect(0.715, 0.81, 0.46, 0.03) || // große Scheiben
+    rect(0.12, 0.2, 0.3, 0.025) || rect(0.8, 0.88, 0.3, 0.025) // kleine Scheiben
   );
 }
 
@@ -41,13 +50,17 @@ function png(size, scale) {
   for (let py = 0; py < size; py++) {
     const row = Buffer.alloc(1 + size * 3);
     for (let px = 0; px < size; px++) {
-      // 3x3 Supersampling für weiche Kanten
+      // 4x4 Supersampling für weiche Kanten
       let hits = 0;
-      for (let sy = 0; sy < 3; sy++)
-        for (let sx = 0; sx < 3; sx++)
-          if (isDumbbell((px + (sx + 0.5) / 3) / size, (py + (sy + 0.5) / 3) / size, scale)) hits++;
-      const a = hits / 9;
-      for (let c = 0; c < 3; c++) row[1 + px * 3 + c] = Math.round(BG[c] * (1 - a) + FG[c] * a);
+      for (let sy = 0; sy < 4; sy++)
+        for (let sx = 0; sx < 4; sx++)
+          if (isDumbbell((px + (sx + 0.5) / 4) / size, (py + (sy + 0.5) / 4) / size, scale)) hits++;
+      const a = hits / 16;
+      const g = py / (size - 1);
+      for (let c = 0; c < 3; c++) {
+        const bg = BG_TOP[c] * (1 - g) + BG_BOTTOM[c] * g;
+        row[1 + px * 3 + c] = Math.round(bg * (1 - a) + FG[c] * a);
+      }
     }
     rows.push(row);
   }

@@ -4,6 +4,7 @@ import { useStore } from '../state/store.jsx';
 import { useI18n } from '../i18n/index.jsx';
 import { Sheet } from './Sheet.jsx';
 import { Icon } from './Icon.jsx';
+import { ExLabel } from './ExLabel.jsx';
 
 // Auswahl einer Übung mit Suche und Filter nach Muskelgruppe und Gerät.
 export function ExercisePicker({ onPick, onClose, title }) {
@@ -49,8 +50,8 @@ export function ExercisePicker({ onPick, onClose, title }) {
         {list.map((e) => (
           <li key={e.id}>
             <button className="pick-item" onClick={() => onPick(e.id)}>
-              <span>{exName(e)}</span>
-              <span className="muted small">{[groupName(e.group), e.equipment && equip(e.equipment)].filter(Boolean).join(' · ')}</span>
+              <ExLabel e={e} />
+              <span className="muted small">{groupName(e.group)}</span>
             </button>
           </li>
         ))}

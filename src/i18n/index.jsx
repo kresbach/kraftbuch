@@ -35,6 +35,14 @@ export function makeI18n(lang) {
     t,
     /** Anzeigename einer Übung; eigene Übungen behalten ihren Namen. */
     exName: (e) => (e ? (!e.custom && dict.exercises?.[e.id]) || e.name : t('exercise.unknown')),
+    /** Name und Gerät getrennt: „Kniebeuge (Langhantel)“ → { name: 'Kniebeuge', tag: 'Langhantel' }.
+     *  Ohne Klammer im Namen (z. B. eigene Übungen) dient das Gerät als Etikett. */
+    exParts(e) {
+      const full = e ? (!e.custom && dict.exercises?.[e.id]) || e.name : t('exercise.unknown');
+      const m = full.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+      if (m) return { name: m[1], tag: m[2] };
+      return { name: full, tag: e?.equipment ? dict.equipment?.[e.equipment] ?? e.equipment : '' };
+    },
     group: (g) => dict.groups?.[g] ?? g,
     equip: (g) => dict.equipment?.[g] ?? g,
     /** Plan- oder Trainingsname; Beispielpläne und „Freies Training“ werden übersetzt. */

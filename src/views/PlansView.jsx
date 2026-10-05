@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../state/store.jsx';
 import { Icon } from '../components/Icon.jsx';
 import { useUndo } from '../components/Undo.jsx';
+import { ExLabel } from '../components/ExLabel.jsx';
+import { EmptyState } from '../components/EmptyState.jsx';
 import { ExercisePicker } from '../components/ExercisePicker.jsx';
 import { DragHandle, moveItem, useSortable } from '../components/Sortable.jsx';
 import { uid } from '../utils/training.js';
@@ -57,7 +59,7 @@ export default function PlansView({ goTo }) {
               <ol className="plan-lines">
                 {plan.exercises.map((pe, i) => (
                   <li key={i}>
-                    <span>{exName(exercises.get(pe.exerciseId))}</span>
+                    <ExLabel e={exercises.get(pe.exerciseId)} />
                     <span className="num muted">{pe.sets} × {pe.reps}{exercises.get(pe.exerciseId)?.timed ? ' s' : ''}</span>
                   </li>
                 ))}
@@ -65,21 +67,24 @@ export default function PlansView({ goTo }) {
               <span className="link small">{t('common.edit')}</span>
             </button>
             <div className="card-foot">
-              <button
-                className="btn btn-small"
-                onClick={() => {
-                  dispatch({ type: 'workout/start', planId: plan.id });
-                  goTo('training');
-                }}
-                disabled={!!state.activeWorkout}
-              >
-                <Icon name="play" size={16} /> {t('common.start')}
-              </button>
+              {!state.activeWorkout ? (
+                <button className="btn btn-small" onClick={() => { dispatch({ type: 'workout/start', planId: plan.id }); goTo('training'); }}>
+                  <Icon name="play" size={16} /> {t('common.start')}
+                </button>
+              ) : state.activeWorkout.planId === plan.id ? (
+                <button className="btn btn-small btn-primary" onClick={() => goTo('training')}>
+                  <Icon name="timer" size={16} /> {t('plans.toWorkout')}
+                </button>
+              ) : (
+                <span className="muted small">{t('plans.running')}</span>
+              )}
             </div>
           </li>
         ))}
       </ul>
-      {state.activeWorkout && <p className="muted small center">{t('plans.busy')}</p>}
+      {state.plans.length === 0 && (
+        <EmptyState icon="list" title={t('plans.emptyTitle')} text={t('plans.emptyText')} />
+      )}
     </>
   );
 }
@@ -126,9 +131,9 @@ function PlanEditor({ draft, isNew, onSave, onCancel, onDelete }) {
             <li key={i} ref={sortable.itemRef(i)} className="card editor-line">
               <div className="editor-line-top">
                 <span className="editor-no num">{i + 1}</span>
-                <strong>{exName(exercises.get(pe.exerciseId))}</strong>
+                <ExLabel e={exercises.get(pe.exerciseId)} as="strong" />
                 <div className="editor-tools">
-                  <button type="button" className="icon-btn danger" aria-label={t('planEditor.remove')} onClick={() => remove(i)}><Icon name="trash" size={18} /></button>
+                  <button type="button" className="icon-btn quiet-danger" aria-label={t('planEditor.remove')} onClick={() => remove(i)}><Icon name="trash" size={18} /></button>
                   <DragHandle label={t('sort.handle')} {...sortable.handleProps(i, plan.exercises.length)} />
                 </div>
               </div>

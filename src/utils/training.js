@@ -123,8 +123,16 @@ export const fmtKg = (n) => `${nf.format(n)} kg`;
 /** Bewegtes Gesamtgewicht kompakt: 980 kg, 4.250 kg, ab 10 t in Tonnen (12,5 t). */
 export const fmtWeight = (kg) => (kg >= 10000 ? `${nf.format(Math.round(kg / 100) / 10)} t` : `${nf.format(Math.round(kg))} kg`);
 
-export const fmtDate = (iso) =>
-  new Date(iso).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+/** „So., 4. Okt.“ – das Jahr nur, wenn es nicht das aktuelle ist. */
+export const fmtDate = (iso) => {
+  const d = new Date(iso);
+  const year = d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {};
+  return d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', ...year });
+};
+/** Kurzer Wochentag ohne Punkt: „Mo“, „Mon“ */
+export const fmtWeekday = (d) => d.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '').slice(0, 3);
+/** „September 2026“ */
+export const fmtMonth = (d) => d.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 export const fmtShortDate = (iso) =>
   new Date(iso).toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
 export const fmtLongToday = () =>
@@ -144,6 +152,33 @@ export function fmtDuration(ms) {
   const min = Math.round(ms / 60000);
   if (min < 60) return `${min} min`;
   return `${Math.floor(min / 60)} h ${min % 60} min`;
+}
+
+/** Die sieben Tage der aktuellen Woche (Mo–So) mit der Zahl der Trainings je Tag. */
+export function weekDays(workouts, now = new Date()) {
+  const start = startOfWeek(now);
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(start);
+    day.setDate(start.getDate() + i);
+    const next = new Date(day);
+    next.setDate(day.getDate() + 1);
+    const count = workouts.filter((w) => { const t = new Date(w.startedAt); return t >= day && t < next; }).length;
+    return { date: day, count, isToday: day.toDateString() === now.toDateString(), isFuture: day > now };
+  });
+}
+
+/** Wochen in Folge mit mindestens einem Training. Die laufende Woche zählt mit, sobald trainiert wurde –
+ *  ist sie noch leer, bricht die Serie dadurch nicht ab. */
+export function weekStreak(workouts, now = new Date()) {
+  const weeks = new Set(workouts.map((w) => startOfWeek(new Date(w.startedAt)).getTime()));
+  const cur = startOfWeek(now);
+  if (!weeks.has(cur.getTime())) cur.setDate(cur.getDate() - 7);
+  let streak = 0;
+  while (weeks.has(cur.getTime())) {
+    streak += 1;
+    cur.setDate(cur.getDate() - 7);
+  }
+  return streak;
 }
 
 /** Montag 00:00 der aktuellen Woche. */

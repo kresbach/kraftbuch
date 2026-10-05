@@ -3,6 +3,7 @@ import { useStore } from '../state/store.jsx';
 import { useI18n } from '../i18n/index.jsx';
 import { muscleStats } from '../utils/stats.js';
 import { fmtNum, fmtWeight } from '../utils/training.js';
+import { EmptyState } from '../components/EmptyState.jsx';
 
 // Zeiträume in Tagen
 const PERIODS = [
@@ -27,7 +28,7 @@ export function MuscleStats() {
   const [days, setDays] = useState(28);
 
   const { rows, weeks } = useMemo(() => muscleStats(state.workouts, exercises, days), [state.workouts, exercises, days]);
-  if (state.workouts.length === 0) return <p className="muted">{t('progress.empty')}</p>;
+  if (state.workouts.length === 0) return <EmptyState icon="chart" title={t('progress.emptyTitle')} text={t('progress.empty')} />;
 
   const sorted = [...rows].sort((a, b) => b.sets - a.sets);
   const max = Math.max(1, ...rows.map((r) => r.sets));

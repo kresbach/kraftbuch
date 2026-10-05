@@ -62,7 +62,8 @@ body {
 body.no-scroll { overflow: hidden; }
 
 h1, h2, h3 { margin: 0; line-height: 1.2; text-wrap: balance; }
-h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+@media (min-width: 768px) { h1 { font-size: 30px; } }
 h2 { font-size: 18px; font-weight: 700; }
 h3 { font-size: 16px; font-weight: 650; }
 p { margin: 0; }
@@ -154,6 +155,10 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   font-size: 13px; font-weight: 650;
 }
 .icon-btn.danger { color: var(--danger); }
+/* Löschen zurückhaltend: grau, erst beim Zeigen/Antippen rot */
+.icon-btn.quiet-danger { color: var(--muted); opacity: 0.7; }
+.icon-btn.quiet-danger:active, .icon-btn.quiet-danger:focus-visible { color: var(--danger); opacity: 1; }
+@media (hover: hover) { .icon-btn.quiet-danger:hover { color: var(--danger); opacity: 1; } }
 .icon-btn.is-armed { color: #fff; }
 
 .field { display: flex; flex-direction: column; gap: 6px; border: 0; margin: 0; padding: 0; min-width: 0; }
@@ -213,6 +218,44 @@ body.keyboard-open .tabbar { display: none; }
 }
 .segmented button.is-on { background: var(--seg-on); color: var(--fg); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
 
+/* Übungsname + Gerät als Etikett */
+.ex-label { overflow-wrap: anywhere; }
+.ex-tag {
+  display: inline-block; vertical-align: 0.1em; padding: 1px 7px;
+  border-radius: 6px; background: var(--surface-2); color: var(--muted);
+  font-size: 0.72em; font-weight: 600; line-height: 1.5; white-space: nowrap; letter-spacing: 0;
+}
+
+/* Woche auf der Startseite */
+.week { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; }
+.week-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.week-head h2 { font-size: 16px; }
+.pill.pill-streak { display: inline-flex; align-items: center; gap: 4px; background: #fbe3cf; color: #8a3b0b; }
+@media (prefers-color-scheme: dark) { .pill.pill-streak { background: #3e2414; color: #ffb37c; } }
+.week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.day { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.day-name { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.day-dot {
+  width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--surface-2); color: var(--muted);
+  font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums;
+}
+.day.is-done .day-dot { background: var(--accent); color: var(--accent-fg); }
+.day.is-today .day-dot { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+.day.is-today .day-name { color: var(--accent-text); }
+.day.is-future .day-dot { background: transparent; border: 1px dashed var(--line); }
+.week-sum { margin: 0; }
+
+/* Leere Zustände */
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 16px; text-align: center; }
+.empty-state p { margin: 0; max-width: 34ch; }
+.empty-state .btn { margin-top: 6px; }
+.empty-icon { width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); }
+
+/* Verlauf nach Woche/Monat gegliedert */
+.history-group + .history-group { margin-top: 18px; }
+.history-group .group-title { margin: 0 0 8px; }
+
 .pill {
   display: inline-block; vertical-align: middle;
   padding: 2px 8px; border-radius: 999px;
@@ -230,9 +273,8 @@ body.keyboard-open .tabbar { display: none; }
 }
 .card-foot { display: flex; justify-content: flex-end; padding: 0 16px 14px; }
 
-.plan-card { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
-.plan-card .card-corner + .plan-card-text { padding-right: 28px; } /* Platz für den Griff oben rechts */
-.plan-card > .btn { align-self: flex-end; }
+.plan-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px 44px 14px 16px; }
+.plan-card > .btn-start { padding-inline: 14px; }
 .plan-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 /* Lange Übungslisten auf zwei Zeilen kürzen, damit die Karten kompakt bleiben */
 .plan-card-text p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
@@ -563,4 +605,25 @@ body.keyboard-open .toast { bottom: calc(var(--safe-b) + 10px); }
   .progress-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; align-items: start; }
   .progress-side .stats { grid-template-columns: 1fr; }
   .chart-card { padding: 20px; }
+}
+
+/* ---------- Bewegung: Haken „ploppt“, erledigte Übung tritt zurück ---------- */
+.check.is-on svg { animation: check-pop 0.28s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes check-pop { from { transform: scale(0.3); } }
+.exercise { transition: border-color 0.25s ease; }
+.exercise.is-complete { border-color: color-mix(in srgb, var(--good) 55%, var(--line)); }
+.exercise.is-complete .set-table, .exercise.is-complete .plates { opacity: 0.6; transition: opacity 0.25s ease; }
+.done-badge {
+  display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; vertical-align: 0.15em;
+  border-radius: 999px; background: var(--good-soft); color: var(--good); font-size: 12px; font-weight: 700;
+  animation: record-in 0.3s ease-out;
+}
+
+/* Tab-Leiste: aktiver Tab mit Fläche hinter dem Symbol */
+.tab-icon { padding: 3px 14px; border-radius: 999px; transition: background-color 0.2s ease; }
+.tab.is-active .tab-icon { background: var(--accent-soft); }
+.tab-dot { right: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

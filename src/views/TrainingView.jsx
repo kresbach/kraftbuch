@@ -8,9 +8,11 @@ import { RestTimer } from '../components/RestTimer.jsx';
 import { Plates } from '../components/Plates.jsx';
 import { CloudBanner } from '../components/CloudSettings.jsx';
 import { DragHandle, useSortable } from '../components/Sortable.jsx';
-import { bestsByExercise, cleanKg, cleanReps, exerciseVolume, isRecord, recordCounts, recordSet, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeight, parseNum, startOfWeek, workoutVolume } from '../utils/training.js';
+import { bestsByExercise, cleanKg, cleanReps, exerciseVolume, isRecord, recordCounts, recordSet, fmtClock, fmtDate, fmtDuration, fmtLongToday, fmtNum, fmtWeekday, fmtWeight, parseNum, startOfWeek, weekDays, weekStreak, workoutVolume } from '../utils/training.js';
 import { unlockSound } from '../utils/sound.js';
 import { useUndo } from '../components/Undo.jsx';
+import { ExLabel } from '../components/ExLabel.jsx';
+import { EmptyState } from '../components/EmptyState.jsx';
 import { useI18n } from '../i18n/index.jsx';
 
 export default function TrainingView({ goTo }) {
@@ -22,8 +24,10 @@ export default function TrainingView({ goTo }) {
 
 function StartScreen({ goTo }) {
   const { state, dispatch, exercises } = useStore();
-  const { t, exName, planName } = useI18n();
+  const { t, exParts, planName } = useI18n();
   const sortable = useSortable((from, to) => dispatch({ type: 'plan/move', from, to }));
+  const days = weekDays(state.workouts);
+  const streak = weekStreak(state.workouts);
   const weekStart = startOfWeek();
   const thisWeek = state.workouts.filter((w) => new Date(w.startedAt) >= weekStart);
   const sets = thisWeek.reduce((n, w) => n + w.exercises.reduce((m, ex) => m + ex.sets.length, 0), 0);
@@ -43,10 +47,24 @@ function StartScreen({ goTo }) {
 
       <CloudBanner />
 
-      <section className="stats" aria-label={t('training.thisWeek')}>
-        <div className="stat"><span className="stat-value num">{thisWeek.length}</span><span className="stat-label">{t('training.statWorkouts')}</span></div>
-        <div className="stat"><span className="stat-value num">{sets}</span><span className="stat-label">{t('training.statSets')}</span></div>
-        <div className="stat"><span className="stat-value num">{fmtWeight(volume)}</span><span className="stat-label">{t('training.statVolume')}</span></div>
+      {/* Woche auf einen Blick: Trainingstage Mo–So, Serie und Summen */}
+      <section className="card week" aria-label={t('training.thisWeek')}>
+        <div className="week-head">
+          <h2>{t('training.thisWeek')}</h2>
+          {streak >= 2 && <span className="pill pill-streak"><Icon name="flame" size={14} /> {t('training.streak', { n: streak })}</span>}
+        </div>
+        <ol className="week-days">
+          {days.map((d) => (
+            <li key={d.date.toISOString()} className={`day ${d.count ? 'is-done' : ''} ${d.isToday ? 'is-today' : ''} ${d.isFuture ? 'is-future' : ''}`}
+              aria-label={`${fmtWeekday(d.date)}: ${d.count ? t('training.dayDone') : t('training.dayRest')}`}>
+              <span className="day-name">{fmtWeekday(d.date)}</span>
+              <span className="day-dot">{d.count ? <Icon name="check" size={16} strokeWidth={3} /> : d.date.getDate()}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="week-sum muted small num">
+          {thisWeek.length ? t('training.weekSummary', { workouts: thisWeek.length, sets, kg: fmtWeight(volume) }) : t('training.weekEmpty')}
+        </p>
       </section>
 
       {state.workouts[0] && <LastWorkout workout={state.workouts[0]} onOpen={() => goTo('history')} />}
@@ -57,7 +75,7 @@ function StartScreen({ goTo }) {
           <button className="link" onClick={() => goTo('plans')}>{t('training.managePlans')}</button>
         </div>
         {state.plans.length === 0 && (
-          <p className="muted">{t('training.noPlans')}</p>
+          <EmptyState icon="list" title={t('plans.emptyTitle')} text={t('training.noPlans')} action={t('plans.create')} onAction={() => goTo('plans')} />
         )}
         <ul className="cards">
           {state.plans.map((plan, index) => {
@@ -68,10 +86,10 @@ function StartScreen({ goTo }) {
                 <div className="plan-card-text">
                   <h3>{planName(plan.id, plan.name)} {isNext && <span className="pill">{t('training.next')}</span>}</h3>
                   <p className="muted small">
-                    {plan.exercises.map((pe) => exName(exercises.get(pe.exerciseId))).join(' · ') || t('plans.noExercises')}
+                    {plan.exercises.map((pe) => exParts(exercises.get(pe.exerciseId)).name).join(' · ') || t('plans.noExercises')}
                   </p>
                 </div>
-                <button className="btn btn-primary" onClick={() => dispatch({ type: 'workout/start', planId: plan.id })}>
+                <button className="btn btn-primary btn-start" onClick={() => dispatch({ type: 'workout/start', planId: plan.id })}>
                   <Icon name="play" size={18} /> {t('common.start')}
                 </button>
               </li>
@@ -189,15 +207,16 @@ function ActiveWorkout() {
           const record = recordSet(ex, bests.get(ex.exerciseId));
           const lastNote = lastNoteFor(state, ex.exerciseId);
           const noteOpen = openNotes.has(exIndex) || !!ex.note;
+          const complete = ex.sets.length > 0 && ex.sets.every((s) => s.done);
           // Scheibenanzeige für den nächsten offenen Satz, sonst das zuletzt eingetragene Gewicht
           const filled = ex.sets.filter((s) => parseNum(s.kg) > 0);
           const nextKg = parseNum(ex.sets.find((s) => !s.done)?.kg);
           const currentKg = nextKg || parseNum(filled[filled.length - 1]?.kg);
           return (
-            <section key={exIndex} ref={sortable.itemRef(exIndex)} className="card exercise">
+            <section key={exIndex} ref={sortable.itemRef(exIndex)} className={`card exercise ${complete ? 'is-complete' : ''}`}>
               <header className="exercise-head">
                 <div>
-                  <h2>{exName(info)}</h2>
+                  <h2><ExLabel e={info} />{complete && <> <span className="done-badge"><Icon name="check" size={14} strokeWidth={3} /> {t('workout.exDone')}</span></>}</h2>
                   {record && (
                     <span className="pill pill-record"><Icon name="trophy" size={14} /> {t('records.new')}: {parseNum(record.kg) > 0 ? `${fmtNum(parseNum(record.kg))} kg × ${fmtReps(record.reps)}` : fmtReps(record.reps)}</span>
                   )}
@@ -207,7 +226,7 @@ function ActiveWorkout() {
                   {lastNote && <p className="muted small last-note">{t('notes.last')}: {lastNote}</p>}
                 </div>
                 <div className="exercise-tools">
-                  <button className="icon-btn danger" aria-label={t('planEditor.remove')}
+                  <button className="icon-btn quiet-danger" aria-label={t('planEditor.remove')}
                     onClick={() => withUndo(t('undo.exerciseRemoved', { name: exName(info) }), { type: 'workout/removeExercise', exIndex }, ['activeWorkout'])}>
                     <Icon name="trash" size={18} />
                   </button>

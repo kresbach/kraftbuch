@@ -4,6 +4,8 @@ import { EquipmentFilter, matchesQuery } from '../components/ExercisePicker.jsx'
 import { useStore } from '../state/store.jsx';
 import { useI18n } from '../i18n/index.jsx';
 import { Icon } from '../components/Icon.jsx';
+import { ExLabel } from '../components/ExLabel.jsx';
+import { EmptyState } from '../components/EmptyState.jsx';
 import { Sheet } from '../components/Sheet.jsx';
 import { useUndo } from '../components/Undo.jsx';
 import { estimate1RM, fmtNum } from '../utils/training.js';
@@ -76,16 +78,15 @@ export default function ExercisesView() {
                 return (
                   <li key={e.id} className="list-item">
                     <div className="list-main">
-                      <span>{exName(e)} {e.custom && <span className="pill pill-muted">{t('exercises.customBadge')}</span>}</span>
-                      <span className="muted small">
-                        {e.equipment ? equip(e.equipment) : t(e.type === 'bodyweight' ? 'exercises.bodyweight' : 'exercises.weighted')}
-                        {best && (best.e1rm > 0
-                          ? ` · ${t('exercises.best1rm', { kg: fmtNum(Math.round(best.e1rm)) })}`
-                          : ` · ${t('exercises.bestReps', { reps: best.reps })}`)}
-                      </span>
+                      <span><ExLabel e={e} /> {e.custom && <span className="pill pill-muted">{t('exercises.customBadge')}</span>}</span>
+                      {best && (
+                        <span className="muted small">
+                          {best.e1rm > 0 ? t('exercises.best1rm', { kg: fmtNum(Math.round(best.e1rm)) }) : t('exercises.bestReps', { reps: best.reps })}
+                        </span>
+                      )}
                     </div>
                     {e.custom && (
-                      <button className="icon-btn danger" aria-label={t('exercises.delete')} onClick={() => {
+                      <button className="icon-btn quiet-danger" aria-label={t('exercises.delete')} onClick={() => {
                         const inPlans = state.plans.filter((p) => p.exercises.some((pe) => pe.exerciseId === e.id)).length;
                         withUndo(t(inPlans ? 'undo.exerciseDeletedPlans' : 'undo.exerciseDeleted', { name: exName(e), n: inPlans }),
                           { type: 'exercise/delete', id: e.id }, ['customExercises', 'plans']);
@@ -101,7 +102,10 @@ export default function ExercisesView() {
         );
       })}
       </div>
-      {all.length === 0 && <p className="muted section">{t('exercises.empty')}</p>}
+      {all.length === 0 && (
+        <EmptyState icon="search" title={t('exercises.emptyTitle')} text={t('exercises.emptyText')}
+          action={query.trim() ? t('exercises.createNamed', { name: query.trim() }) : null} onAction={() => setAdding(true)} />
+      )}
 
       {adding && <AddExercise initialName={query} onClose={() => setAdding(false)} onSave={(exercise) => { dispatch({ type: 'exercise/add', exercise }); setAdding(false); }} />}
     </>

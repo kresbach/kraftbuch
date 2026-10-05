@@ -27,7 +27,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#f3f5f0',
-        theme_color: '#647e4b',
+        theme_color: '#f3f5f0', // Statusleiste in der Hintergrundfarbe der App
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
