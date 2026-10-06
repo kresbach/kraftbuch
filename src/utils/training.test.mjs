@@ -1,6 +1,6 @@
 // Schnelltest: node src/utils/training.test.mjs
 import assert from 'node:assert/strict';
-import { suggestNext, setUnit, fmtWeight as fw, fmtKg as fk, inputToKg, kgToInput, platesPerSide as pps, PLATES_LB, weekDays, weekStreak, bestsByExercise, recordCounts, cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
+import { setBodyweightContext, exerciseVolume, suggestNext, setUnit, fmtWeight as fw, fmtKg as fk, inputToKg, kgToInput, platesPerSide as pps, PLATES_LB, weekDays, weekStreak, bestsByExercise, recordCounts, cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
 
 assert.equal(estimate1RM(100, 1), 100);
 assert.equal(Math.round(estimate1RM(100, 5)), 117);
@@ -67,4 +67,11 @@ assert.deepEqual(suggestNext([{ kg: 0, reps: 8 }, { kg: 0, reps: 8 }], {}), { re
 assert.deepEqual(suggestNext([{ kg: 0, reps: 45 }], { timed: true }), { reps: 50 });
 assert.equal(suggestNext(null), null);
 setUnit('lb'); assert.deepEqual(suggestNext([{ kg: 100, reps: 5 }], {}), { kg: 102.268 }); setUnit('kg');
+// Körpergewicht bei Körpergewichtsübungen
+setBodyweightContext(new Set(['klimmzuege']), 80);
+assert.equal(exerciseVolume({ exerciseId: 'klimmzuege', sets: [{ kg: 5, reps: 10, done: true }, { kg: '', reps: 8, done: true }] }), 850 + 640);
+assert.equal(exerciseVolume({ exerciseId: 'kniebeuge', sets: [{ kg: 100, reps: 5, done: true }] }), 500); // keine Körpergewichtsübung
+assert.equal(workoutVolume({ bodyWeight: 70, exercises: [{ exerciseId: 'klimmzuege', sets: [{ kg: 0, reps: 10, done: true }] }] }), 700); // Gewicht vom Trainingstag
+assert.equal(workoutVolume({ exercises: [{ exerciseId: 'plank', sets: [{ kg: 0, reps: 60, done: true }] }] }), 0);
+setBodyweightContext(new Set(), 0);
 console.log('training.js: alle Tests bestanden');

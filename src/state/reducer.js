@@ -227,7 +227,8 @@ export function reducer(state, action) {
         }))
         .filter((ex) => ex.sets.length > 0);
       if (exercises.length === 0) return { ...state, activeWorkout: null };
-      const finished = { ...w, exercises, finishedAt: new Date().toISOString() };
+      const bw = parseNum(state.settings.bodyWeight);
+      const finished = { ...w, exercises, finishedAt: new Date().toISOString(), ...(bw > 0 ? { bodyWeight: bw } : {}) };
       return { ...state, activeWorkout: null, workouts: [finished, ...state.workouts] };
     }
     case 'workout/note': // Notiz zum Training (ohne exIndex) oder zu einer Übung

@@ -305,6 +305,9 @@ function ActiveWorkout() {
                 {!noteOpen && (
                   <button className="btn btn-small btn-ghost" onClick={() => toggleNote(exIndex)}>{t('notes.add')}</button>
                 )}
+                {isBodyweight && !info?.timed && !(parseNum(state.settings.bodyWeight) > 0) && ex.sets.some((s) => s.done) && (
+                  <span className="muted small bw-hint">{t('workout.bodyWeightHint')}</span>
+                )}
                 {exMoved > 0 && <span className="ex-moved muted small num">{fmtWeight(exMoved)}</span>}
               </div>
             </section>

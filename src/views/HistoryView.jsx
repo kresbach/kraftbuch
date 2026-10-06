@@ -109,7 +109,7 @@ function WorkoutList({ goTo }) {
                   {w.note?.trim() && <p className="detail-note">{w.note.trim()}</p>}
                   {w.exercises.map((ex, i) => {
                     const info = exercises.get(ex.exerciseId);
-                    const v = exerciseVolume(ex);
+                    const v = exerciseVolume(ex, w.bodyWeight);
                     return (
                       <div key={i} className="detail-line">
                         <span className="detail-title">

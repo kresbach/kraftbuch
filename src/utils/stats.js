@@ -26,7 +26,7 @@ export function muscleStats(workouts, exercises, days, now = Date.now()) {
       row.lastAt = Math.max(row.lastAt, at);
       if (!inRange) continue;
       row.sets += sets;
-      row.volume += exerciseVolume(ex);
+      row.volume += exerciseVolume(ex, w.bodyWeight);
       touched.add(row);
     }
     touched.forEach((row) => { row.sessions += 1; });

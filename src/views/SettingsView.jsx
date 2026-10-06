@@ -1,5 +1,6 @@
 import { useStore } from '../state/store.jsx';
-import { BAR_LB } from '../utils/training.js';
+import { BAR_LB, getUnit } from '../utils/training.js';
+import { WeightInput } from '../components/WeightInput.jsx';
 import { CloudSettings } from '../components/CloudSettings.jsx';
 import { LANGUAGES, deviceLanguage, useI18n } from '../i18n/index.jsx';
 
@@ -51,6 +52,16 @@ export default function SettingsView() {
         </div>
         <p className="muted small">{t('settings.unitHint')}</p>
       </fieldset>
+
+      <label className="field">
+        <span className="field-label">{t('settings.bodyWeight')}</span>
+        <span className="input-unit">
+          <WeightInput id="body-weight" className="text-input" placeholder="–" value={state.settings.bodyWeight ?? ''}
+            onChange={(kg) => dispatch({ type: 'settings/update', patch: { bodyWeight: kg } })} />
+          <span className="muted">{getUnit()}</span>
+        </span>
+        <span className="muted small">{t('settings.bodyWeightHint')}</span>
+      </label>
 
       <fieldset className="field">
         <legend className="field-label">{t('settings.rest')}</legend>

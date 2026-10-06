@@ -22,13 +22,27 @@ export const cleanReps = (v) => (/^\d{0,4}$/.test(v) ? v : null);
 /** Bewegtes Gewicht eines Satzes (kg × Wdh). */
 export const setVolume = (s) => parseNum(s.kg) * parseNum(s.reps);
 
-/** Bewegtes Gewicht einer Übung im Training (nur erledigte Sätze). */
 // Bei Zeitübungen (Sekunden statt Wdh) ergibt kg × Wdh kein bewegtes Gewicht
 const TIMED_IDS = new Set(['plank', 'side-plank']);
-export const exerciseVolume = (ex) => (TIMED_IDS.has(ex.exerciseId) ? 0
-  : ex.sets.filter((s) => s.done).reduce((a, s) => a + Math.max(0, setVolume(s)), 0));
 
-export const workoutVolume = (w) => w.exercises.reduce((sum, ex) => sum + exerciseVolume(ex), 0);
+// Körpergewichtsübungen: pro Wiederholung zählt Körpergewicht + Zusatzgewicht.
+// Welche Übungen das sind und das aktuelle Körpergewicht setzt die App (setBodyweightContext).
+let bodyweightIds = new Set();
+let currentBodyWeight = 0;
+export function setBodyweightContext(ids, bodyWeight) {
+  bodyweightIds = ids;
+  currentBodyWeight = parseNum(bodyWeight);
+}
+
+/** Bewegtes Gewicht einer Übung im Training (nur erledigte Sätze).
+ *  `bodyWeight`: Körpergewicht zum Zeitpunkt des Trainings (sonst das aktuelle aus den Einstellungen). */
+export function exerciseVolume(ex, bodyWeight = currentBodyWeight) {
+  if (TIMED_IDS.has(ex.exerciseId)) return 0;
+  const bw = bodyweightIds.has(ex.exerciseId) ? parseNum(bodyWeight) : 0;
+  return ex.sets.filter((s) => s.done).reduce((a, s) => a + Math.max(0, (bw + parseNum(s.kg)) * parseNum(s.reps)), 0);
+}
+
+export const workoutVolume = (w) => w.exercises.reduce((sum, ex) => sum + exerciseVolume(ex, w.bodyWeight ?? currentBodyWeight), 0);
 
 // ---- Steigerungs-Vorschlag ----
 // Wurden beim letzten Mal in allen Sätzen mit dem höchsten Gewicht die Ziel-Wiederholungen geschafft,

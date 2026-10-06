@@ -74,7 +74,7 @@ export function renderSummary(w, { title, exercises, exLabel, t, records }) {
   ctx.stroke();
   ctx.fillStyle = C.accentText;
   ctx.font = `800 96px ${FONT}`;
-  const volume = w.exercises.reduce((n, ex) => n + exerciseVolume(ex), 0);
+  const volume = w.exercises.reduce((n, ex) => n + exerciseVolume(ex, w.bodyWeight), 0);
   ctx.fillText(fmtWeight(volume), PAD + 44, y + 112);
   ctx.fillStyle = C.muted;
   ctx.font = `500 34px ${FONT}`;

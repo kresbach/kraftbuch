@@ -661,3 +661,8 @@ body.is-sorting .is-dragging.is-dropping { transition: transform 0.22s cubic-bez
 .detail-session { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; }
 .detail-session + .detail-session { border-top: 1px solid var(--line); }
 .progress-layout.is-compact { display: flex; flex-direction: column; gap: 12px; }
+
+/* Eingabe mit Einheit dahinter (Körpergewicht) */
+.input-unit { display: flex; align-items: center; gap: 10px; max-width: 220px; }
+.input-unit .text-input { text-align: center; font-size: 18px; font-weight: 650; }
+.bw-hint { flex-basis: 100%; }
