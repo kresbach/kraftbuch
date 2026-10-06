@@ -132,13 +132,10 @@ export function CloudBanner() {
       </div>
     );
   }
-  if (cloud.provider === 'google' && cloud.googleConnected && (cloud.status.phase === 'needs_auth' || cloud.conflict)) {
-    return (
-      <div className="note banner">
-        <span>{cloud.conflict ? t('banner.conflict') : t('banner.auth')}</span>
-        {!cloud.conflict && <button className="btn btn-small" onClick={cloud.syncNow}>{t('banner.sync')}</button>}
-      </div>
-    );
+  // Abgelaufene Google-Anmeldung wird nur in den Einstellungen gezeigt (Speicherort → Jetzt synchronisieren),
+  // nicht hier. Ein Konflikt braucht dagegen eine Entscheidung und wird weiter angezeigt.
+  if (cloud.provider === 'google' && cloud.conflict) {
+    return <div className="note banner"><span>{t('banner.conflict')}</span></div>;
   }
   return null;
 }
