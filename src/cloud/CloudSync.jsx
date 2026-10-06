@@ -12,7 +12,6 @@ const BACKUP_REMINDER_MS = 24 * 60 * 60 * 1000;
 const IDLE = { phase: 'idle', msg: '' };
 const POLL_MS = 60 * 1000; // bei geöffneter App regelmäßig nach Änderungen anderer Geräte sehen
 const CHANGE_DELAY_MS = 2000; // nach einer Änderung kurz warten, dann hochladen
-const RENEW_RETRY_MS = 10 * 60 * 1000; // abgelehnte/blockierte stille Neuanmeldung nicht dauernd wiederholen
 // Meldungen sind Übersetzungsschlüssel (msg) mit Werten (vars); die Oberfläche übersetzt sie.
 
 function loadMeta() {
@@ -37,7 +36,6 @@ export function CloudSyncProvider({ children }) {
   stateRef.current = state;
   const running = useRef(false);
   const signingIn = useRef(false);
-  const lastRenewAttempt = useRef(0);
 
   const setMeta = useCallback((patch) => {
     const next = { ...metaRef.current, ...patch };
@@ -185,28 +183,9 @@ export function CloudSyncProvider({ children }) {
     return () => clearTimeout(t);
   }, [isGoogle, state.updatedAt, runGoogleSync]);
 
-  // Google gibt einer Web-App ohne eigenen Server nur eine Freigabe für rund eine Stunde. Ist sie
-  // abgelaufen, wird sie beim nächsten Tippen in der App still erneuert – das Google-Fenster schließt
-  // sich dabei normalerweise sofort wieder, weil die Zustimmung schon besteht. Ohne Tippen erlaubt der
-  // Browser kein Anmeldefenster.
-  const wasConnected = isGoogle && (!!meta.fileId || !!meta.lastSyncedAt);
-  useEffect(() => {
-    if (!wasConnected || !GOOGLE_CLIENT_ID) return;
-    const onTap = () => {
-      if (validToken() || signingIn.current || Date.now() - lastRenewAttempt.current < RENEW_RETRY_MS) return;
-      lastRenewAttempt.current = Date.now();
-      signingIn.current = true;
-      signIn({ firstTime: false })
-        .then(({ token, expiresAt }) => {
-          setMeta({ token, tokenExpiresAt: expiresAt });
-          runGoogleSync();
-        })
-        .catch(() => {}) // bleibt bei „Jetzt synchronisieren“
-        .finally(() => { signingIn.current = false; });
-    };
-    document.addEventListener('click', onTap, true);
-    return () => document.removeEventListener('click', onTap, true);
-  }, [wasConnected, runGoogleSync, setMeta]);
+  // Google gibt einer Web-App ohne eigenen Server nur eine Freigabe für rund eine Stunde; erneuern geht
+  // nur über das Google-Fenster. Das öffnet sich bewusst nie von selbst – ist die Freigabe abgelaufen,
+  // zeigt die Startseite einen Hinweis, und erst ein Tippen auf „Synchronisieren“ meldet neu an.
 
   // ---- Datei-Sicherung (iCloud Drive über „In Dateien sichern“) ----
 

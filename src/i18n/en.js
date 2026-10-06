@@ -164,7 +164,7 @@ export default {
     'cloud.saveFile': 'Save as file',
     'cloud.loadFile': 'Load backup',
     'cloud.googleMissing': 'Google Drive is not set up for this installation yet: the Google client ID is missing. See “Google Drive einrichten” in the README.',
-    'cloud.googleText': 'Your data is saved automatically as the file Kraftbuch-Daten.json in your Google Drive and synced with every device you sign in on – when you open the app, every minute, after every change and when you leave the app. Google grants access for about an hour at a time; after that it is renewed the next time you tap in the app. The app can only see this one file.',
+    'cloud.googleText': 'Your data is saved automatically as the file Kraftbuch-Daten.json in your Google Drive and synced with every device you sign in on – when you open the app, every minute, after every change and when you leave the app. Google grants access for about an hour at a time. After that, the start screen shows a notice – tap “Sync” to sign in again. The app can only see this one file.',
     'cloud.conflictTitle': 'Which data should be kept?',
     'cloud.conflictDetail': 'Google Drive: {workouts} workouts, {plans} plans. The other version will be overwritten.',
     'cloud.keepCloud': 'Load Google Drive data',
