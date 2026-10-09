@@ -94,14 +94,23 @@ export function lastSetsFor(state, exerciseId) {
   return null;
 }
 
-function newWorkoutExercise(state, exerciseId, targetSets = 3, targetReps = '') {
+/**
+ * Neue Übung im Training: jeder Satz bekommt die Werte seines Satzes vom letzten Mal (Gewicht und Wdh).
+ * Gibt es mehr Sätze als letztes Mal, gilt der letzte Satz von damals. Ohne Vorgeschichte: Plan-Vorgabe.
+ * Anzahl der Sätze: aus dem Plan, sonst wie beim letzten Mal (mindestens 3 bei neuen Übungen).
+ */
+function newWorkoutExercise(state, exerciseId, targetSets, targetReps = '') {
   const last = lastSetsFor(state, exerciseId);
-  const kg = last ? last[0].kg : '';
-  const reps = targetReps || (last ? last[0].reps : '');
+  const count = targetSets || last?.length || 3;
   return {
     exerciseId,
     ...(targetReps ? { target: Number(targetReps) } : {}), // Ziel-Wdh aus dem Plan (für den Steigerungs-Vorschlag)
-    sets: Array.from({ length: targetSets }, () => ({ kg, reps, done: false })),
+    sets: Array.from({ length: count }, (_, i) => {
+      const prev = last?.[Math.min(i, last.length - 1)];
+      return prev
+        ? { kg: prev.kg || '', reps: prev.reps || targetReps || '', done: false }
+        : { kg: '', reps: targetReps || '', done: false };
+    }),
   };
 }
 

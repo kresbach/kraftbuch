@@ -85,4 +85,22 @@ assert.equal(sets(t), 'x x x');
   st = reducer(st, { type: 'exercise/rest', id: 'kniebeuge', seconds: null });
   assert.equal('kniebeuge' in st.settings.restByExercise, false);
 }
+// Neues Training übernimmt die Werte des letzten Mals Satz für Satz
+{
+  const plan = { id: 'p', name: 'P', exercises: [{ exerciseId: 'kniebeuge', sets: 4, reps: 5 }, { exerciseId: 'bankdruecken', sets: 3, reps: 8 }] };
+  const hist = { id: 'w', startedAt: '2026-10-01T10:00:00Z', finishedAt: '2026-10-01T11:00:00Z', exercises: [
+    { exerciseId: 'kniebeuge', sets: [{ kg: 100, reps: 5, done: true }, { kg: 100, reps: 5, done: true }, { kg: 95, reps: 4, done: true }] },
+  ] };
+  let st = reducer({ ...initialState, plans: [plan], workouts: [hist] }, { type: 'workout/start', planId: 'p' });
+  const sq = st.activeWorkout.exercises[0].sets.map((x) => `${x.kg}x${x.reps}`).join(' ');
+  assert.equal(sq, '100x5 100x5 95x4 95x4'); // 4 Sätze laut Plan, Satz 4 wie der letzte von damals
+  assert.equal(st.activeWorkout.exercises[0].target, 5);
+  const bp = st.activeWorkout.exercises[1].sets.map((x) => `${x.kg}x${x.reps}`).join(' ');
+  assert.equal(bp, 'x8 x8 x8'); // noch nie gemacht → Plan-Vorgabe
+  // frei hinzugefügt: so viele Sätze wie letztes Mal
+  st = reducer(st, { type: 'workout/addExercise', exerciseId: 'kniebeuge' });
+  assert.equal(st.activeWorkout.exercises[2].sets.map((x) => `${x.kg}x${x.reps}`).join(' '), '100x5 100x5 95x4');
+  st = reducer(st, { type: 'workout/addExercise', exerciseId: 'plank' });
+  assert.equal(st.activeWorkout.exercises[3].sets.length, 3);
+}
 console.log('reducer.js: alle Tests bestanden');

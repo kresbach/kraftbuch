@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cleanKg, getUnit, inputToKg, kgToInput } from '../utils/training.js';
+import { cleanKg, fmtInput, getUnit, inputToKg, kgToInput } from '../utils/training.js';
 
 /**
  * Gewichtsfeld: zeigt und nimmt Werte in der gewählten Einheit (kg/lb) entgegen, speichert aber kg.
@@ -8,7 +8,9 @@ import { cleanKg, getUnit, inputToKg, kgToInput } from '../utils/training.js';
 export function WeightInput({ value, onChange, ...props }) {
   const [draft, setDraft] = useState(null); // Text während der Eingabe (nur lb)
   const lb = getUnit() === 'lb';
-  const shown = lb ? draft ?? kgToInput(value === '' || value == null ? '' : String(value)) : value;
+  // Übernommene Werte sind Zahlen (z. B. 77.5) – mit Dezimalkomma der Sprache anzeigen; Getipptes bleibt Text
+  const shown = lb ? draft ?? kgToInput(value === '' || value == null ? '' : String(value))
+    : typeof value === 'number' ? fmtInput(value) : value;
   return (
     <input {...props} inputMode="decimal" value={shown}
       onFocus={() => lb && setDraft(kgToInput(value === '' || value == null ? '' : String(value)))}
