@@ -35,7 +35,6 @@ export default {
     'training.startPlan': 'Start a plan',
     'training.managePlans': 'Manage plans',
     'training.noPlans': 'No plans yet. Create your own under “Plans” or start a free workout.',
-    'training.next': 'Up next',
     'training.freeStart': 'Free workout without a plan',
     'training.free': 'Free workout',
 

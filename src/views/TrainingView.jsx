@@ -34,12 +34,7 @@ function StartScreen({ goTo }) {
   const thisWeek = state.workouts.filter((w) => new Date(w.startedAt) >= weekStart);
   const sets = thisWeek.reduce((n, w) => n + w.exercises.reduce((m, ex) => m + ex.sets.length, 0), 0);
   const volume = thisWeek.reduce((n, w) => n + workoutVolume(w), 0);
-  // Vorschlag: der Plan, der in der Liste nach dem zuletzt trainierten Plan kommt.
-  const lastPlanIndex = state.plans.findIndex((p) => p.id === state.workouts[0]?.planId);
-  const nextPlanId = lastPlanIndex >= 0 && state.plans.length > 1
-    ? state.plans[(lastPlanIndex + 1) % state.plans.length].id
-    : null;
-  // Pläne mit festen Trainingstagen: heute fällige Pläne werden markiert (vor „Als Nächstes“)
+  // Pläne mit festen Trainingstagen: heute fällige Pläne werden markiert
   const today = ((new Date().getDay() + 6) % 7) + 1; // 1 = Montag … 7 = Sonntag
   const trainedToday = days.find((d) => d.isToday)?.count > 0;
   const dueToday = new Set(trainedToday ? [] : state.plans.filter((p) => p.days?.includes(today)).map((p) => p.id));
@@ -86,7 +81,6 @@ function StartScreen({ goTo }) {
         <ul className="cards">
           {state.plans.map((plan, index) => {
             const isToday = dueToday.has(plan.id);
-            const isNext = !dueToday.size && plan.id === nextPlanId;
             return (
               <li key={plan.id} ref={sortable.itemRef(index)} className="card plan-card">
                 <DragHandle className="drag-handle card-corner" label={t('sort.handle')} {...sortable.handleProps(index, state.plans.length)} />
@@ -94,7 +88,6 @@ function StartScreen({ goTo }) {
                   <h3>
                     {planName(plan.id, plan.name)}
                     {isToday && <> <span className="pill pill-today">{t('training.today')}</span></>}
-                    {isNext && <> <span className="pill">{t('training.next')}</span></>}
                   </h3>
                   {plan.days?.length > 0 && <p className="plan-days small">{fmtPlanDays(plan.days)}</p>}
                   <p className="muted small">

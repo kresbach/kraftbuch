@@ -35,7 +35,6 @@ export default {
     'training.startPlan': 'Plan starten',
     'training.managePlans': 'Pläne verwalten',
     'training.noPlans': 'Noch kein Plan angelegt. Erstelle unter „Pläne“ deinen eigenen oder starte ein freies Training.',
-    'training.next': 'Als Nächstes',
     'training.freeStart': 'Freies Training ohne Plan',
     'training.free': 'Freies Training',
 
