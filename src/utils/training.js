@@ -34,12 +34,17 @@ export function setBodyweightContext(ids, bodyWeight) {
   currentBodyWeight = parseNum(bodyWeight);
 }
 
+// Kurzhantelübungen: eingetragen wird das Gewicht EINER Hantel, bewegt werden zwei.
+let dumbbellIds = new Set();
+export function setDumbbellContext(ids) { dumbbellIds = ids; }
+
 /** Bewegtes Gewicht einer Übung im Training (nur erledigte Sätze).
  *  `bodyWeight`: Körpergewicht zum Zeitpunkt des Trainings (sonst das aktuelle aus den Einstellungen). */
 export function exerciseVolume(ex, bodyWeight = currentBodyWeight) {
   if (TIMED_IDS.has(ex.exerciseId)) return 0;
   const bw = bodyweightIds.has(ex.exerciseId) ? parseNum(bodyWeight) : 0;
-  return ex.sets.filter((s) => s.done).reduce((a, s) => a + Math.max(0, (bw + parseNum(s.kg)) * parseNum(s.reps)), 0);
+  const factor = dumbbellIds.has(ex.exerciseId) ? 2 : 1;
+  return ex.sets.filter((s) => s.done).reduce((a, s) => a + Math.max(0, (bw + factor * parseNum(s.kg)) * parseNum(s.reps)), 0);
 }
 
 export const workoutVolume = (w) => w.exercises.reduce((sum, ex) => sum + exerciseVolume(ex, w.bodyWeight ?? currentBodyWeight), 0);

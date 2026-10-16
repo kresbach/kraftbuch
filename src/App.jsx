@@ -8,7 +8,7 @@ import SettingsView from './views/SettingsView.jsx';
 import { Icon } from './components/Icon.jsx';
 import { useI18n } from './i18n/index.jsx';
 import { useBackClose } from './utils/useBackClose.js';
-import { setBodyweightContext, setUnit } from './utils/training.js';
+import { setBodyweightContext, setDumbbellContext, setUnit } from './utils/training.js';
 
 const TABS = [
   { id: 'training', label: 'tab.training', icon: 'dumbbell', View: TrainingView, wide: true },
@@ -33,6 +33,8 @@ export default function App() {
   setUnit(state.settings.unit); // vor dem Rendern der Ansichten: Gewichte in kg oder lb anzeigen
   const bodyweightIds = useMemo(() => new Set([...exercises.values()].filter((e) => e.type === 'bodyweight' && !e.timed).map((e) => e.id)), [exercises]);
   setBodyweightContext(bodyweightIds, state.settings.bodyWeight); // Körpergewicht zählt bei Körpergewichtsübungen mit
+  const dumbbellIds = useMemo(() => new Set([...exercises.values()].filter((e) => e.equipment === 'Kurzhantel').map((e) => e.id)), [exercises]);
+  setDumbbellContext(dumbbellIds); // Kurzhantel: Gewicht je Hantel, zählt doppelt
   const { View, wide } = TABS.find((x) => x.id === tab);
   useHideTabbarWhileTyping();
   useBackClose(() => setTab('training'), tab !== 'training', { outer: true }); // Zurück führt von jedem Tab zum Training

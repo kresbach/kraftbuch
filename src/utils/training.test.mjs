@@ -1,6 +1,6 @@
 // Schnelltest: node src/utils/training.test.mjs
 import assert from 'node:assert/strict';
-import { setBodyweightContext, exerciseVolume, suggestNext, setUnit, fmtWeight as fw, fmtKg as fk, inputToKg, kgToInput, platesPerSide as pps, PLATES_LB, weekDays, weekStreak, bestsByExercise, recordCounts, cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
+import { setBodyweightContext, setDumbbellContext, exerciseVolume, suggestNext, setUnit, fmtWeight as fw, fmtKg as fk, inputToKg, kgToInput, platesPerSide as pps, PLATES_LB, weekDays, weekStreak, bestsByExercise, recordCounts, cleanKg, cleanReps, estimate1RM, fmtClock, fmtDuration, fmtWeight, platesPerSide, startOfWeek, workoutVolume } from './training.js';
 
 assert.equal(estimate1RM(100, 1), 100);
 assert.equal(Math.round(estimate1RM(100, 5)), 117);
@@ -75,3 +75,9 @@ assert.equal(workoutVolume({ bodyWeight: 70, exercises: [{ exerciseId: 'klimmzue
 assert.equal(workoutVolume({ exercises: [{ exerciseId: 'plank', sets: [{ kg: 0, reps: 60, done: true }] }] }), 0);
 setBodyweightContext(new Set(), 0);
 console.log('training.js: alle Tests bestanden');
+
+// Kurzhantel: eingetragen wird eine Hantel, bewegt werden zwei
+setDumbbellContext(new Set(['kh-curl']));
+assert.equal(exerciseVolume({ exerciseId: 'kh-curl', sets: [{ kg: 12, reps: 10, done: true }, { kg: 12, reps: 8, done: false }] }), 240);
+assert.equal(exerciseVolume({ exerciseId: 'kniebeuge', sets: [{ kg: 100, reps: 5, done: true }] }), 500);
+setDumbbellContext(new Set());

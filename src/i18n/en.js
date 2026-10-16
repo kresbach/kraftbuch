@@ -256,6 +256,7 @@ export default {
     'settings.bodyWeight': 'Your body weight',
     'settings.bodyWeightHint': 'Counted together with any added weight in bodyweight exercises (e.g. pull-ups, dips) towards the total lifted.',
     'workout.bodyWeightHint': 'Enter your body weight in Settings to have it counted here.',
+    'workout.perDumbbell': '{unit} each',
     'settings.unit': 'Weight unit',
     'settings.unit.kg': 'Kilograms (kg)',
     'settings.unit.lb': 'Pounds (lb)',

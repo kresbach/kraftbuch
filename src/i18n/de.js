@@ -256,6 +256,7 @@ export default {
     'settings.bodyWeight': 'Dein Körpergewicht',
     'settings.bodyWeightHint': 'Zählt bei Körpergewichtsübungen (z. B. Klimmzüge, Dips) zusammen mit dem Zusatzgewicht ins bewegte Gewicht.',
     'workout.bodyWeightHint': 'Trage in den Einstellungen dein Körpergewicht ein, dann zählt es hier mit.',
+    'workout.perDumbbell': '{unit} je Hantel',
     'settings.unit': 'Gewichtseinheit',
     'settings.unit.kg': 'Kilogramm (kg)',
     'settings.unit.lb': 'Pfund (lb)',

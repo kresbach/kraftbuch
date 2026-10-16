@@ -259,7 +259,7 @@ function ActiveWorkout() {
               <div className="set-table" role="table" aria-label={t('workout.setsOf', { name: exName(info) })}>
                 <div className="set-row set-row-head" role="row">
                   <span role="columnheader">{t('workout.set')}</span>
-                  <span role="columnheader">{isBodyweight ? `+${getUnit()}` : getUnit()}</span>
+                  <span role="columnheader">{isBodyweight ? `+${getUnit()}` : info?.equipment === 'Kurzhantel' ? t('workout.perDumbbell', { unit: getUnit() }) : getUnit()}</span>
                   <span role="columnheader">{repsLabel}</span>
                   <span role="columnheader" className="sr-only">{t('workout.done')}</span>
                 </div>
